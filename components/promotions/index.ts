@@ -1,0 +1,8 @@
+export { ShopPageBanner } from './ShopPageBanner'
+export { ContactPagePromo } from './ContactPagePromo'
+export { AboutPagePromo } from './AboutPagePromo'
+export { ProductPagePromo } from './ProductPagePromo'
+export { FAQPagePromo } from './FAQPagePromo'
+export { WishlistPagePromo } from './WishlistPagePromo'
+export { CartPagePromo } from './CartPagePromo'
+export { CheckoutPagePromo } from './CheckoutPagePromo'

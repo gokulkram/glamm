@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: #FAF8F5;
+  --color-surface: #F5F0EB;
+  --color-text: #2C2C2C;
+  --color-text-muted: #6B6B6B;
+  --color-accent: #f68961;
+  --color-accent-dark: #e5764d;
+  --color-border: #EAE3D9;
+  --color-gold: #febf6b;
+  --color-peach: #ffc9a7;
+  --color-navy: #0a1121;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+@layer components {
+  .container-max {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  .section-title {
+    @apply text-sm font-bold tracking-widest uppercase text-[#f68961] mb-2;
+  }
+
+  .section-sub {
+    @apply text-lg text-[#6B6B6B];
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-[#EAE3D9];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-[#f68961] text-white hover:bg-[#e5764d] shadow-lg hover:shadow-xl;
+  }
+
+  .btn-secondary {
+    @apply bg-white border-2 border-[#f68961] text-[#f68961] hover:bg-[#f68961] hover:text-white;
+  }
+
+  .btn-lg {
+    @apply px-8 py-4 text-lg;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-[#f68961] to-[#febf6b] bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  .shadow-large {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+}
+
+/* Animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dark);
+}
+

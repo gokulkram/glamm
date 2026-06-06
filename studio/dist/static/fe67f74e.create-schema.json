@@ -1,0 +1,391 @@
+[
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "title",
+        "type": "string",
+        "title": "Product Name"
+      },
+      {
+        "options": {
+          "source": "title",
+          "maxLength": 96
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug",
+        "title": "Slug (URL)"
+      },
+      {
+        "rows": 4,
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "description",
+        "type": "text"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "to": [
+          {
+            "type": "category"
+          }
+        ],
+        "name": "category",
+        "type": "reference"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "image",
+        "type": "image",
+        "title": "Product Image"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 0
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "priceMin",
+        "type": "number",
+        "title": "Minimum Price ($)"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 0
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "priceMax",
+        "type": "number",
+        "title": "Maximum Price ($)"
+      },
+      {
+        "options": {
+          "layout": "tags"
+        },
+        "of": [
+          {
+            "type": "string"
+          }
+        ],
+        "name": "sizes",
+        "type": "array",
+        "title": "Available Sizes"
+      },
+      {
+        "description": "Price for each size",
+        "of": [
+          {
+            "fields": [
+              {
+                "name": "size",
+                "type": "string"
+              },
+              {
+                "name": "price",
+                "type": "number",
+                "title": "Price ($)"
+              }
+            ],
+            "type": "object"
+          }
+        ],
+        "name": "sizes_prices",
+        "type": "array",
+        "title": "Size Prices"
+      },
+      {
+        "initialValue": true,
+        "name": "inStock",
+        "type": "boolean"
+      },
+      {
+        "name": "badge",
+        "type": "string",
+        "title": "Badge (e.g., \"Best Seller\", \"New\")"
+      },
+      {
+        "of": [
+          {
+            "type": "string"
+          }
+        ],
+        "name": "features",
+        "type": "array"
+      },
+      {
+        "of": [
+          {
+            "type": "string"
+          }
+        ],
+        "name": "benefits",
+        "type": "array"
+      }
+    ],
+    "name": "product",
+    "type": "document",
+    "title": "Products"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "name",
+        "type": "string",
+        "title": "Category Name"
+      },
+      {
+        "options": {
+          "source": "name",
+          "maxLength": 96
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "custom"
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "rows": 3,
+        "name": "description",
+        "type": "text"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "name": "image",
+        "type": "image",
+        "title": "Category Image"
+      }
+    ],
+    "name": "category",
+    "type": "document",
+    "title": "Categories"
+  },
+  {
+    "fields": [
+      {
+        "initialValue": "Glamm Hair",
+        "name": "siteName",
+        "type": "string"
+      },
+      {
+        "initialValue": "Premium Hair Extensions",
+        "name": "tagline",
+        "type": "string"
+      },
+      {
+        "initialValue": "Luxury Hair Extensions",
+        "name": "heroTitle",
+        "type": "string",
+        "title": "Homepage Hero Title"
+      },
+      {
+        "rows": 2,
+        "name": "heroSubtitle",
+        "type": "text",
+        "title": "Homepage Hero Subtitle"
+      },
+      {
+        "name": "contactEmail",
+        "type": "string"
+      },
+      {
+        "name": "contactPhone",
+        "type": "string"
+      },
+      {
+        "rows": 3,
+        "name": "address",
+        "type": "text",
+        "title": "Business Address"
+      },
+      {
+        "fields": [
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "instagram",
+            "type": "url",
+            "title": "Instagram URL"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "facebook",
+            "type": "url",
+            "title": "Facebook URL"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "tiktok",
+            "type": "url",
+            "title": "TikTok URL"
+          }
+        ],
+        "name": "socialLinks",
+        "type": "object",
+        "title": "Social Media Links"
+      }
+    ],
+    "name": "siteSettings",
+    "type": "document"
+  }
+]
