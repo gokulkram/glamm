@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import PolicyLayout from '@/components/layout/PolicyLayout'
+import TermsContactSection from '@/components/TermsContactSection'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Glamm Hair Extensions',
@@ -292,6 +293,8 @@ export default function TermsOfServicePage() {
         Customers will only be charged once for shipping costs (this includes returns). No restocking fee is charged
         to consumers for the return of a product.
       </p>
+
+      <TermsContactSection />
     </PolicyLayout>
   )
 }
