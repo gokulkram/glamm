@@ -70,6 +70,30 @@ body {
   .shadow-large {
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   }
+
+  .policy-content h2 {
+    @apply text-2xl font-bold text-[#1a2744] mt-10 mb-3;
+  }
+
+  .policy-content h3 {
+    @apply text-lg font-semibold text-[#1a2744] mt-6 mb-2;
+  }
+
+  .policy-content p {
+    @apply mb-4;
+  }
+
+  .policy-content ul {
+    @apply list-disc pl-6 space-y-2 mb-4;
+  }
+
+  .policy-content a {
+    @apply text-[#f68961] hover:underline;
+  }
+
+  .policy-content strong {
+    @apply text-[#1a2744] font-semibold;
+  }
 }
 
 /* Animations */

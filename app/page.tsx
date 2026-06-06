@@ -13,9 +13,15 @@ export const metadata: Metadata = {
 }
 
 const testimonials = [
-  { name: 'Sarah M.', initial: 'S', quote: "The blend is absolutely unreal! I've tried so many extensions before, but these are by far the best. They feel like my own hair and nobody can tell the difference." },
-  { name: 'Jessica L.', initial: 'J', quote: "Super comfortable and natural looking. I wear them every day and forget I even have them in. The quality is outstanding and they last forever!" },
-  { name: 'Emily R.', initial: 'E', quote: "Best purchase this year! The customer service was amazing and the extensions exceeded all my expectations. I get compliments everywhere I go!" },
+  { name: 'Best hair I’ve ever bought!', initial: 'B', quote: "Soft, full, and zero shedding. I’m obsessed." },
+  { name: 'My man thought it was my real hair.', initial: 'M', quote: "And honestly… I didn’t correct him." },
+  { name: 'Installed it twice and it still looks new.', initial: 'I', quote: "Quality is crazy good." },
+  { name: 'I got compliments before I even sat down.', initial: 'C', quote: "This hair is THAT girl." },
+  { name: 'Shipping was fast and the hair is gorgeous.', initial: 'S', quote: "10/10 experience." },
+  { name: 'I’m a stylist and I recommend this brand now.', initial: 'R', quote: "Clients love it every time." },
+  { name: 'The curls stayed popping all week.', initial: 'T', quote: "No frizz, no drama." },
+  { name: 'I was scared to try a new brand… now I’m loyal.', initial: 'L', quote: "Glamm Hair won me over." },
+  { name: 'Feels like butter, looks like luxury.', initial: 'F', quote: "I’m not buying hair anywhere else." },
 ]
 
 export default function Home() {
@@ -29,7 +35,7 @@ export default function Home() {
           <h2 className="section-title">OUR TOP PICKS</h2>
           <h3 className="text-3xl md:text-4xl font-bold mb-4">FOR EVERY VIBE</h3>
           <p className="section-sub max-w-3xl mx-auto">
-            Whether you&apos;re feeling those bouncy curls, sleek straight locks, or effortless waves, we&apos;ve got your dream hair covered. These are our best sellers for a reason—because they bring the glam every time!
+            Whether you&apos;re feeling those bouncy curls, sleek straight locks, or effortless waves, we&apos;ve got your dream hair covered. These are our best sellers for a reason, because they bring the glam every time!
           </p>
         </div>
 
@@ -68,7 +74,7 @@ export default function Home() {
         <div className="text-center mb-16">
           <h2 className="section-title">Why Glamm Hair?</h2>
           <p className="section-sub max-w-2xl mx-auto">
-            Premium quality extensions designed for confidence and elegance
+            Because you deserve hair that keeps up. Work, brunch, date night, repeat.
           </p>
         </div>
 
@@ -107,10 +113,10 @@ export default function Home() {
               <span className="gradient-text">The confidence boost you&apos;ve been missing</span>
             </h2>
             <p className="text-text-muted leading-relaxed mb-6">
-              Our curly extensions aren&apos;t just about style—they&apos;re about transformation. Many of our customers shared that they felt less insecure about thin hair and experienced a major self-esteem boost after wearing our extensions.💫
+              Our curly extensions aren&apos;t just about style, they&apos;re about transformation. Many of our customers shared that they felt less insecure about thin hair and experienced a major self esteem boost after wearing our extensions.💫
             </p>
             <p className="text-text-muted leading-relaxed mb-8">
-              Expect volume, length, and a natural blend so seamless, no one will know it&apos;s not your own. These curls don&apos;t just turn heads—they turn moods around.
+              Expect volume, length, and a natural blend so seamless, no one will know it&apos;s not your own. These curls don&apos;t just turn heads, they turn moods around.
             </p>
             <div className="flex gap-4">
               <Link href="/shop" className="btn btn-primary">Shop Now</Link>

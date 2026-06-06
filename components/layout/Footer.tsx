@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram } from 'lucide-react'
+import PaymentMethods from '@/components/PaymentMethods'
 
 export default function Footer() {
   return (
@@ -80,10 +81,23 @@ export default function Footer() {
                 Follow on Instagram
               </a>
             </li>
-            <li><Link href="/return-policy" className="hover:text-accent transition-colors">Return Policy</Link></li>
-            <li><Link href="/shipping" className="hover:text-accent transition-colors">Shipping Info</Link></li>
+            <li><Link href="/track-order" className="hover:text-accent transition-colors">Track Order</Link></li>
+            <li><Link href="/return-policy" className="hover:text-accent transition-colors">Refund & Exchange</Link></li>
+            <li><Link href="/shipping" className="hover:text-accent transition-colors">Shipping Policy</Link></li>
+            <li><Link href="/how-to-pay" className="hover:text-accent transition-colors">How To Pay</Link></li>
+            <li><Link href="/delivery-issues" className="hover:text-accent transition-colors">Delivery Issues</Link></li>
+            <li><Link href="/privacy-policy" className="hover:text-accent transition-colors">Privacy Policy</Link></li>
+            <li><Link href="/terms-of-service" className="hover:text-accent transition-colors">Terms of Service</Link></li>
             <li><Link href="/contact" className="hover:text-accent transition-colors">Contact Us</Link></li>
           </ul>
+        </div>
+      </div>
+
+      {/* Payment Methods */}
+      <div className="border-t border-white/10 py-6">
+        <div className="container-max flex flex-col items-center gap-3">
+          <p className="text-xs uppercase tracking-wider text-white/50">We Accept</p>
+          <PaymentMethods className="justify-center" />
         </div>
       </div>
 

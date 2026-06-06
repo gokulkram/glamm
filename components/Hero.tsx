@@ -52,19 +52,19 @@ export default function Hero() {
           {/* Main Heading */}
           <div className="space-y-6">
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight">
-              <span className="block text-white mb-3 drop-shadow-lg">Transform Your</span>
+              <span className="block text-white mb-3 drop-shadow-lg">Your Most Stunning</span>
               <span
                 className="block drop-shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #f68961, #febf6b, #ffc9a7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
               >
-                Natural Beauty
+                Look Starts Here
               </span>
             </h1>
           </div>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-white/90 leading-relaxed font-light max-w-3xl mx-auto drop-shadow-md">
-            Premium hair extensions crafted for the modern woman.
+            Your Natural Beauty, Upgraded.
             <span className="block mt-3 font-medium drop-shadow-sm" style={{ color: '#ffc9a7' }}>
               Luxurious • Natural • Effortlessly Stunning
             </span>
@@ -116,7 +116,7 @@ export default function Hero() {
                   <Shield className="w-7 h-7" style={{ color: '#febf6b' }} />
                 </div>
               </div>
-              <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>30-Day</div>
+              <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>30 Day</div>
               <div className="text-xs text-white/70 font-medium uppercase tracking-wide">Guarantee</div>
             </div>
           </div>

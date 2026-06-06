@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { products, categories } from '@/lib/data'
 import ProductCard from '@/components/ProductCard'
 import { Search, X, Sparkles, ChevronRight, Star } from 'lucide-react'
@@ -11,6 +11,15 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('featured')
+
+  // Pick up ?category= from the URL (used by header dropdown, footer & homepage links)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const cat = params.get('category')
+    if (cat && categories.some((c) => c.slug === cat)) {
+      setSelectedCategory(cat)
+    }
+  }, [])
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products]
