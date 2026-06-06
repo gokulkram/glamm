@@ -5,14 +5,14 @@ import { Instagram, Heart, MessageCircle, Bookmark } from 'lucide-react'
 import { useState } from 'react'
 
 const lucyPhotos = [
-  { id: 1, src: '/lucy-photos/_F8A0262-Edit.jpg', likes: 1243, comments: 89 },
-  { id: 2, src: '/lucy-photos/_F8A0263-Edit.jpg', likes: 2156, comments: 134 },
-  { id: 3, src: '/lucy-photos/_F8A0287-Edit.jpg', likes: 1876, comments: 112 },
-  { id: 4, src: '/lucy-photos/_F8A0291-Edit.jpg', likes: 3421, comments: 201 },
-  { id: 5, src: '/lucy-photos/_F8A0317-Edit.jpg', likes: 2987, comments: 178 },
-  { id: 6, src: '/lucy-photos/_F8A0333-Edit.jpg', likes: 1654, comments: 95 },
-  { id: 7, src: '/lucy-photos/_F8A0346-Edit.jpg', likes: 2234, comments: 143 },
-  { id: 8, src: '/lucy-photos/_F8A0376-Edit.jpg', likes: 1987, comments: 121 },
+  { id: 1, src: '/lucy-photos/_F8A0291-Edit.jpg', likes: 1243, comments: 89 },
+  { id: 2, src: '/lucy-photos/_F8A0317-Edit.jpg', likes: 2156, comments: 134 },
+  { id: 3, src: '/lucy-photos/_F8A0376-Edit.jpg', likes: 1876, comments: 112 },
+  { id: 4, src: '/lucy-photos/_F8A0381-Edit.jpg', likes: 3421, comments: 201 },
+  { id: 5, src: '/lucy-photos/_F8A0400-Edit.jpg', likes: 2987, comments: 178 },
+  { id: 6, src: '/lucy-photos/_F8A0427-Edit.jpg', likes: 1654, comments: 95 },
+  { id: 7, src: '/lucy-photos/_F8A0433-Edit.jpg', likes: 2234, comments: 143 },
+  { id: 8, src: '/lucy-photos/_F8A0475-Edit.jpg', likes: 1987, comments: 121 },
 ]
 
 export function LucyGallery() {
