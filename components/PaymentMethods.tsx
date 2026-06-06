@@ -1,16 +1,18 @@
-// Accepted payment method badges, shown in the footer.
-// Lightweight inline badges so no external image assets are required.
+import Image from 'next/image'
 
-const methods: { label: string; bg: string; color: string; node?: React.ReactNode }[] = [
-  { label: 'VISA', bg: '#ffffff', color: '#1a1f71' },
-  { label: 'Mastercard', bg: '#ffffff', color: '#eb001b' },
-  { label: 'AMEX', bg: '#006fcf', color: '#ffffff' },
-  { label: 'DISCOVER', bg: '#ffffff', color: '#f76b1c' },
-  { label: 'PayPal', bg: '#ffffff', color: '#003087' },
-  { label: 'Apple Pay', bg: '#000000', color: '#ffffff' },
-  { label: 'Google Pay', bg: '#ffffff', color: '#5f6368' },
-  { label: 'Cash App', bg: '#00d54b', color: '#ffffff' },
-  { label: 'Shop Pay', bg: '#5a31f4', color: '#ffffff' },
+// Accepted payment method logos, shown in the footer.
+// SVG logos live in /public/payment.
+const methods: { label: string; src: string }[] = [
+  { label: 'Visa', src: '/payment/visa.svg' },
+  { label: 'Mastercard', src: '/payment/mastercard.svg' },
+  { label: 'American Express', src: '/payment/amex.svg' },
+  { label: 'Discover', src: '/payment/discover.svg' },
+  { label: 'PayPal', src: '/payment/paypal.svg' },
+  { label: 'Apple Pay', src: '/payment/apple-pay.svg' },
+  { label: 'Google Pay', src: '/payment/google-pay.svg' },
+  { label: 'Cash App Pay', src: '/payment/cashapp.svg' },
+  { label: 'Venmo', src: '/payment/venmo.svg' },
+  { label: 'Amazon Pay', src: '/payment/amazonpay.svg' },
 ]
 
 export default function PaymentMethods({ className = '' }: { className?: string }) {
@@ -19,10 +21,17 @@ export default function PaymentMethods({ className = '' }: { className?: string 
       {methods.map((m) => (
         <span
           key={m.label}
-          className="inline-flex items-center justify-center h-8 min-w-[52px] px-3 rounded-md border border-black/10 text-[11px] font-bold tracking-wide shadow-sm"
-          style={{ background: m.bg, color: m.color }}
+          title={m.label}
+          className="inline-flex items-center justify-center h-9 w-14 px-2.5 rounded-md bg-white border border-black/10 shadow-sm"
         >
-          {m.label}
+          <Image
+            src={m.src}
+            alt={m.label}
+            width={40}
+            height={24}
+            unoptimized
+            className="h-5 w-auto object-contain"
+          />
         </span>
       ))}
     </div>
