@@ -1,8 +1,13 @@
 import Link from 'next/link'
 import { CheckCircle, Package, Mail, Home } from 'lucide-react'
 
-export default function OrderConfirmationPage() {
-  const orderNumber = `GLM-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+export default function OrderConfirmationPage({
+  searchParams,
+}: {
+  searchParams: { order?: string }
+}) {
+  const orderNumber =
+    searchParams.order || `GLM-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
 
   return (
     <div className="section">
