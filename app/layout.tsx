@@ -1,7 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+import ConditionalChrome from '@/components/layout/ConditionalChrome'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
 
@@ -20,11 +19,7 @@ export default function RootLayout({
       <body className="flex flex-col min-h-screen">
         <CartProvider>
           <WishlistProvider>
-            <Header />
-            <main>
-              {children}
-            </main>
-            <Footer />
+            <ConditionalChrome>{children}</ConditionalChrome>
           </WishlistProvider>
         </CartProvider>
       </body>
