@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Menu, X, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Heart, Menu, X, ChevronDown, User } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 
@@ -142,6 +142,14 @@ export default function Header() {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
+            <Link
+              href="/account"
+              className="relative p-2 hover:text-accent transition-colors"
+              aria-label="My Account"
+            >
+              <User className="w-6 h-6" />
+            </Link>
+
             <Link
               href="/wishlist"
               className="relative p-2 hover:text-accent transition-colors"
