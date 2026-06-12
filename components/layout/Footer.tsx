@@ -33,15 +33,6 @@ export default function Footer() {
               <Instagram className="w-5 h-5 text-white" />
             </a>
           </div>
-          <a
-            href="https://www.instagram.com/glammhair_extenions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-2 text-sm text-white/70 hover:text-accent transition-colors"
-          >
-            <Instagram className="w-4 h-4" />
-            @glammhair_extenions
-          </a>
         </div>
 
         {/* Shop */}
@@ -70,17 +61,6 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold mb-3 text-white">Connect</h4>
           <ul className="space-y-2 text-sm text-white/70">
-            <li>
-              <a
-                href="https://www.instagram.com/glammhair_extenions"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-accent transition-colors flex items-center gap-2"
-              >
-                <Instagram className="w-4 h-4" />
-                Follow on Instagram
-              </a>
-            </li>
             <li><Link href="/track-order" className="hover:text-accent transition-colors">Track Order</Link></li>
             <li><Link href="/return-policy" className="hover:text-accent transition-colors">Refund & Exchange</Link></li>
             <li><Link href="/shipping" className="hover:text-accent transition-colors">Shipping Policy</Link></li>

@@ -1,24 +1,36 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { products, categories } from '@/lib/data'
+import type { Product, Category } from '@/lib/data'
 import ProductCard from '@/components/ProductCard'
 import { Search, X, Sparkles, ChevronRight, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export default function ShopPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('featured')
 
+  // Load the catalog from the database
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((d) => {
+        setProducts(d.products ?? [])
+        setCategories(d.categories ?? [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
   // Pick up ?category= from the URL (used by header dropdown, footer & homepage links)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const cat = params.get('category')
-    if (cat && categories.some((c) => c.slug === cat)) {
-      setSelectedCategory(cat)
-    }
+    const cat = new URLSearchParams(window.location.search).get('category')
+    if (cat) setSelectedCategory(cat)
   }, [])
 
   const filteredProducts = useMemo(() => {
@@ -60,7 +72,7 @@ export default function ShopPage() {
     }
 
     return filtered
-  }, [searchQuery, selectedCategory, sortBy])
+  }, [products, categories, searchQuery, selectedCategory, sortBy])
 
   return (
     <>
@@ -149,7 +161,17 @@ export default function ShopPage() {
           </div>
 
           {/* Products Grid - Full Width */}
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-square rounded-2xl bg-surface mb-3" />
+                  <div className="h-4 w-3/4 rounded bg-surface mb-2" />
+                  <div className="h-4 w-1/2 rounded bg-surface" />
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />

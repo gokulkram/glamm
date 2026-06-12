@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { Heart, ArrowRight, Trash2, ShoppingCart } from 'lucide-react'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useCart } from '@/contexts/CartContext'
-import { products } from '@/lib/data'
 
 export default function WishlistPage() {
   const { wishlist, removeFromWishlist } = useWishlist()
@@ -36,7 +35,6 @@ export default function WishlistPage() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {wishlist.map((item) => {
-            const fullProduct = products.find(p => p.id === item.id)
             return (
               <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden group">
                 <div className="relative aspect-[3/4] bg-surface">

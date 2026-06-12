@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
-import { products } from '@/lib/data'
+import type { Product } from '@/lib/data'
 import ProductCard from '@/components/ProductCard'
 import { ShoppingCart, Heart, Check, Star, Truck, Shield, RotateCcw, ChevronRight, MessageCircle, Award, Package, Zap, Info, ImageIcon } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
@@ -13,15 +13,36 @@ import { useWishlist } from '@/contexts/WishlistContext'
 export default function ProductPage() {
   const params = useParams()
   const slug = params.slug as string
-  const product = products.find((p) => p.slug === slug)
   const { addToCart } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedSize, setSelectedSize] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
   const [activeTab, setActiveTab] = useState('description')
   const [selectedImage, setSelectedImage] = useState(0)
+
+  // Load the catalog from the database
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((d) => setAllProducts(d.products ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const product = allProducts.find((p) => p.slug === slug)
+
+  if (loading) {
+    return (
+      <div className="section container-max text-center py-24">
+        <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+        <p className="mt-4 text-text-muted">Loading product…</p>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -75,7 +96,7 @@ export default function ProductPage() {
     }
   }
 
-  const relatedProducts = products
+  const relatedProducts = allProducts
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4)
 

@@ -4,8 +4,9 @@ import Image from 'next/image'
 import Hero from '@/components/Hero'
 import ProductCard from '@/components/ProductCard'
 import { LucyGallery } from '@/components/LucyGallery'
-import { products, categories } from '@/lib/data'
-import { BadgeCheck, Package, ShieldCheck, Heart, Star, Mail, Gift, Instagram, Quote } from 'lucide-react'
+import { getProducts, getCategories } from '@/lib/products'
+import { BadgeCheck, Package, ShieldCheck, Heart, Star, Mail, Gift, Instagram } from 'lucide-react'
+import ReviewCarousel from '@/components/ReviewCarousel'
 
 export const metadata: Metadata = {
   title: 'Glamm Hair Extensions | Premium 100% Virgin Human Hair | Free Shipping',
@@ -22,16 +23,21 @@ const testimonials = [
   { name: 'The curls stayed popping all week.', initial: 'T', quote: "No frizz, no drama." },
   { name: 'I was scared to try a new brand… now I’m loyal.', initial: 'L', quote: "Glamm Hair won me over." },
   { name: 'Feels like butter, looks like luxury.', initial: 'F', quote: "I’m not buying hair anywhere else." },
+  { name: 'I don’t usually leave reviews but WOW.', initial: 'W', quote: "This hair gave what it needed to give." },
 ]
 
-export default function Home() {
+export const revalidate = 60
+
+export default async function Home() {
+  const [products, categories] = await Promise.all([getProducts(), getCategories()])
+
   return (
     <>
       <Hero />
 
       {/* Products Section */}
       <section className="section container-max">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="section-title">OUR TOP PICKS</h2>
           <h3 className="text-3xl md:text-4xl font-bold mb-4">FOR EVERY VIBE</h3>
           <p className="section-sub max-w-3xl mx-auto">
@@ -40,7 +46,7 @@ export default function Home() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
           <Link href="/shop" className="px-6 py-3 rounded-full bg-accent text-white font-semibold hover:bg-accent-dark transition-colors">
             All Products
           </Link>
@@ -62,7 +68,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-8">
           <Link href="/shop" className="btn btn-primary btn-lg">
             Browse All Extensions
           </Link>
@@ -71,14 +77,14 @@ export default function Home() {
 
       {/* Why Glamm Hair Section */}
       <section className="section container-max">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10">
           <h2 className="section-title">Why Glamm Hair?</h2>
           <p className="section-sub max-w-2xl mx-auto">
             Because you deserve hair that keeps up. Work, brunch, date night, repeat.
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-16">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: BadgeCheck, title: 'Premium Quality', desc: '100% virgin human hair sourced ethically from trusted suppliers' },
             { icon: Package, title: 'Free Shipping', desc: 'Free standard shipping on all orders over $100' },
@@ -128,7 +134,7 @@ export default function Home() {
 
       {/* Instagram Section */}
       <section className="section container-max">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="section-title">See The Glamm Difference</h2>
           <p className="section-sub max-w-2xl mx-auto mb-8">
             Real hair, real transformations, real confidence. Join thousands of women who&apos;ve discovered their perfect look with Glamm.
@@ -153,45 +159,29 @@ export default function Home() {
 
       {/* Testimonials */}
       <section className="section container-max">
-        <div className="text-center mb-16">
-          <h2 className="section-title">What Our Customers Say</h2>
-          <p className="section-sub max-w-2xl mx-auto">
-            Join thousands of happy customers who&apos;ve transformed their look with Glamm Hair
-          </p>
-        </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {testimonials.map((t, i) => (
-            <div key={i} className="card p-8 hover:shadow-large transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, j) => (
-                  <Star key={j} className="w-5 h-5 fill-accent text-accent" />
-                ))}
-              </div>
-              <Quote className="w-10 h-10 text-accent/20 mb-4" />
-              <blockquote className="text-text-muted leading-relaxed mb-6">&quot;{t.quote}&quot;</blockquote>
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center text-white font-bold">
-                  {t.initial}
-                </div>
-                <div>
-                  <div className="font-semibold">{t.name}</div>
-                  <div className="text-xs text-accent flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Verified Purchase
-                  </div>
-                </div>
-              </div>
+        <div className="text-center mb-10">
+          <h2 className="section-title">Real Reviews. Real Results.</h2>
+          <h3 className="text-3xl md:text-4xl font-bold mb-5">What Our Customers Say</h3>
+          <div className="inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full glass px-6 py-3 shadow-sm">
+            <div className="flex -space-x-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-7 w-7 rounded-full bg-gradient-to-br from-accent to-accent-dark border-2 border-white" />
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass">
-            <Star className="w-5 h-5 fill-accent text-accent" />
-            <span className="font-semibold">4.9/5</span>
-            <span className="text-text-muted">from 5,000+ reviews</span>
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, j) => (
+                <Star key={j} className="h-4 w-4 fill-[#febf6b] text-[#febf6b]" />
+              ))}
+            </div>
+            <span className="font-bold">4.9/5</span>
+            <span className="text-sm text-text-muted">from 5,000+ verified reviews</span>
           </div>
+        </div>
+
+        <ReviewCarousel testimonials={testimonials} />
+
+        <div className="mt-10 text-center">
+          <Link href="/shop" className="btn btn-primary btn-lg">Shop The Collection</Link>
         </div>
       </section>
 
@@ -202,7 +192,7 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
         <div className="container-max relative">
           <div className="max-w-4xl mx-auto">
-            <div className="card p-12 md:p-16 text-center">
+            <div className="card p-8 md:p-12 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 mb-6">
                 <Mail className="w-8 h-8 text-accent" />
               </div>
