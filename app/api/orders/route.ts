@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { sendOrderConfirmation } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
@@ -159,6 +160,22 @@ export async function POST(req: NextRequest) {
     .from('customers')
     .upsert(customerRow, { onConflict: 'email' })
   if (customerError) console.error('Customer upsert failed (non-fatal):', customerError)
+
+  // Send the order confirmation email (best-effort — never fail the order)
+  sendOrderConfirmation({
+    orderNumber: orderRow.order_number,
+    email: customer.email,
+    firstName: customer.firstName,
+    items: items.map((it) => ({
+      title: it.title,
+      size: it.size,
+      quantity: it.quantity,
+      unit_price: Number(it.unit_price),
+    })),
+    subtotal,
+    shipping: Number(shipping || 0),
+    total,
+  }).catch((e) => console.error('Order email error:', e))
 
   return NextResponse.json({
     success: true,
