@@ -56,14 +56,22 @@ export async function middleware(request: NextRequest) {
 
   // ---- Customer account area (any signed-in user) ----
   if (path.startsWith('/account')) {
-    const isAuthPage = path === '/account/login' || path === '/account/register'
-    if (!isAuthPage && !user) {
+    const publicPages = [
+      '/account/login',
+      '/account/register',
+      '/account/forgot-password',
+      '/account/reset-password',
+    ]
+    const isPublic = publicPages.includes(path)
+    if (!isPublic && !user) {
       const url = request.nextUrl.clone()
       url.pathname = '/account/login'
       url.searchParams.set('next', path)
       return NextResponse.redirect(url)
     }
-    if (isAuthPage && user) {
+    // Only bounce away from login/register when already signed in — never from
+    // forgot/reset (the recovery flow needs them even with a temp session).
+    if ((path === '/account/login' || path === '/account/register') && user) {
       const url = request.nextUrl.clone()
       url.pathname = '/account'
       url.search = ''

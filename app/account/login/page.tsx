@@ -58,6 +58,11 @@ function LoginForm() {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className={field} placeholder="••••••••" />
             </div>
+            <div className="mt-1.5 text-right">
+              <Link href="/account/forgot-password" className="text-sm text-accent hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </div>
           <button type="submit" disabled={loading} className="btn btn-primary w-full">
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Log In'}
