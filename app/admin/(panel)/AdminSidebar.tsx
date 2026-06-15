@@ -7,6 +7,7 @@ import {
   Tags,
   ShoppingBag,
   Users,
+  Settings,
   ExternalLink,
   LogOut,
 } from 'lucide-react'
@@ -17,9 +18,10 @@ const NAV = [
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function AdminSidebar({ email }: { email: string }) {
+export default function AdminSidebar({ email, name }: { email: string; name?: string }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -77,7 +79,10 @@ export default function AdminSidebar({ email }: { email: string }) {
           <LogOut className="h-4.5 w-4.5" />
           Log out
         </button>
-        <div className="px-3 pt-2 text-xs text-white/40 truncate">{email}</div>
+        <div className="px-3 pt-2 leading-tight">
+          {name && <div className="text-sm font-medium text-white/90 truncate">{name}</div>}
+          <div className="text-xs text-white/40 truncate">{email}</div>
+        </div>
       </div>
     </aside>
   )

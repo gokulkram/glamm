@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Package, Tags, ShoppingBag, Users } from 'lucide-react'
+import { Package, Tags, ShoppingBag, Users, Settings } from 'lucide-react'
 import { getAdminUser } from '@/lib/supabase/admin-auth'
+import { getAdminProfile } from '@/lib/admin/data'
 import AdminSidebar from './AdminSidebar'
 
 export const dynamic = 'force-dynamic'
@@ -11,15 +12,17 @@ const MOBILE_NAV = [
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const user = await getAdminUser()
   if (!user) redirect('/admin/login')
+  const profile = await getAdminProfile()
 
   return (
     <div className="min-h-screen flex bg-background">
-      <AdminSidebar email={user.email ?? ''} />
+      <AdminSidebar email={user.email ?? ''} name={profile?.name} />
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Mobile top nav (sidebar is hidden on small screens) */}

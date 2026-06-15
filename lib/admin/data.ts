@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getAdminUser } from '@/lib/supabase/admin-auth'
 
 export type AdminOrder = {
   id: string
@@ -185,4 +186,24 @@ export async function getCustomers(): Promise<AdminCustomer[]> {
       }
     })
     .sort((a, b) => new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime())
+}
+
+export type AdminProfile = { email: string; name: string; role: string }
+
+/** The signed-in admin's profile (from the admins table, with metadata fallback). */
+export async function getAdminProfile(): Promise<AdminProfile | null> {
+  const user = await getAdminUser()
+  if (!user?.email) return null
+  const sb = supabaseAdmin()
+  const { data } = await sb
+    .from('admins')
+    .select('name, role')
+    .ilike('email', user.email.toLowerCase())
+    .maybeSingle()
+  const meta = (user.user_metadata ?? {}) as { name?: string; full_name?: string }
+  return {
+    email: user.email,
+    name: data?.name ?? meta.name ?? meta.full_name ?? '',
+    role: data?.role ?? 'admin',
+  }
 }
