@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ShoppingBag, LogOut } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, MapPin, Settings, LogOut } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 const TABS = [
   { href: '/account', label: 'Overview', icon: LayoutDashboard },
   { href: '/account/orders', label: 'My Orders', icon: ShoppingBag },
+  { href: '/account/addresses', label: 'Addresses', icon: MapPin },
+  { href: '/account/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AccountNav() {

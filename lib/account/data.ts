@@ -66,6 +66,62 @@ export async function getMyOrders(): Promise<{ user: User | null; orders: MyOrde
   return { user, orders }
 }
 
+export type MyProfile = {
+  email: string
+  firstName: string
+  lastName: string
+  phone: string
+}
+
+export async function getMyProfile(): Promise<MyProfile | null> {
+  const user = await getCurrentUser()
+  if (!user?.email) return null
+  const sb = supabaseAdmin()
+  const { data } = await sb
+    .from('customers')
+    .select('first_name, last_name, phone')
+    .ilike('email', user.email.toLowerCase())
+    .maybeSingle()
+  const meta = (user.user_metadata ?? {}) as { first_name?: string; last_name?: string }
+  return {
+    email: user.email,
+    firstName: data?.first_name ?? meta.first_name ?? '',
+    lastName: data?.last_name ?? meta.last_name ?? '',
+    phone: data?.phone ?? '',
+  }
+}
+
+export type Address = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  phone: string | null
+  address1: string
+  address2: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  country: string | null
+  is_default: boolean
+}
+
+export async function getMyAddresses(): Promise<Address[]> {
+  const user = await getCurrentUser()
+  if (!user) return []
+  const sb = supabaseAdmin()
+  const { data, error } = await sb
+    .from('addresses')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('is_default', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) {
+    console.error('getMyAddresses failed:', error)
+    return []
+  }
+  return (data ?? []) as Address[]
+}
+
 /** Order detail, but only if it belongs to the signed-in user. */
 export async function getMyOrderDetail(id: string): Promise<OrderDetail | null> {
   const user = await getCurrentUser()

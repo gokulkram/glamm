@@ -8,6 +8,7 @@ import Script from 'next/script'
 import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import type { Address } from '@/lib/account/data'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -87,6 +88,47 @@ export default function CheckoutPage() {
     })
   }, [])
 
+  // Saved addresses (checkout requires login, so we can always try to load them)
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [saveNewAddress, setSaveNewAddress] = useState(false)
+
+  const applyAddress = (a: Address) => {
+    setSelectedAddressId(a.id)
+    setCustomerInfo((prev) => ({
+      ...prev,
+      firstName: a.first_name ?? prev.firstName,
+      lastName: a.last_name ?? prev.lastName,
+      phone: a.phone ?? prev.phone,
+      address1: a.address1 ?? '',
+      address2: a.address2 ?? '',
+      city: a.city ?? '',
+      state: a.state ?? '',
+      zip: a.zip ?? '',
+    }))
+  }
+
+  useEffect(() => {
+    fetch('/api/account/addresses')
+      .then((r) => (r.ok ? r.json() : { addresses: [] }))
+      .then((d) => {
+        const addrs: Address[] = d.addresses ?? []
+        setSavedAddresses(addrs)
+        const def = addrs.find((a) => a.is_default) ?? addrs[0]
+        if (def) applyAddress(def)
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const useNewAddress = () => {
+    setSelectedAddressId(null)
+    setCustomerInfo((prev) => ({
+      ...prev,
+      address1: '', address2: '', city: '', state: '', zip: '',
+    }))
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value })
   }
@@ -127,6 +169,23 @@ export default function CheckoutPage() {
         setError(data.error || 'Could not place your order. Please try again.')
         setIsProcessing(false)
         return
+      }
+      // Optionally save the new address to the account (best-effort)
+      if (!selectedAddressId && saveNewAddress) {
+        await fetch('/api/account/addresses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: customerInfo.firstName,
+            last_name: customerInfo.lastName,
+            phone: customerInfo.phone,
+            address1: customerInfo.address1,
+            address2: customerInfo.address2,
+            city: customerInfo.city,
+            state: customerInfo.state,
+            zip: customerInfo.zip,
+          }),
+        }).catch(() => {})
       }
       clearCart()
       router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`)
@@ -217,7 +276,41 @@ export default function CheckoutPage() {
 
             {/* Billing Address */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Billing Address</h2>
+              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
+
+              {/* Saved address picker */}
+              {savedAddresses.length > 0 && (
+                <div className="mb-4 grid gap-2">
+                  {savedAddresses.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => applyAddress(a)}
+                      className={`text-left rounded-lg border p-3 text-sm transition-colors ${
+                        selectedAddressId === a.id ? 'border-accent bg-accent/5' : 'border-border hover:bg-surface'
+                      }`}
+                    >
+                      <div className="font-medium">
+                        {`${a.first_name ?? ''} ${a.last_name ?? ''}`.trim() || 'Saved address'}
+                        {a.is_default && <span className="ml-2 text-xs text-accent">Default</span>}
+                      </div>
+                      <div className="text-text-muted">
+                        {a.address1}{a.address2 ? `, ${a.address2}` : ''}, {[a.city, a.state, a.zip].filter(Boolean).join(', ')}
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={useNewAddress}
+                    className={`text-left rounded-lg border p-3 text-sm transition-colors ${
+                      selectedAddressId === null ? 'border-accent bg-accent/5' : 'border-border hover:bg-surface'
+                    }`}
+                  >
+                    + Use a new address
+                  </button>
+                </div>
+              )}
+
               <div className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <input type="text" name="firstName" placeholder="First Name" value={customerInfo.firstName} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
@@ -230,6 +323,12 @@ export default function CheckoutPage() {
                   <input type="text" name="state" placeholder="State" value={customerInfo.state} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                   <input type="text" name="zip" placeholder="ZIP" value={customerInfo.zip} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                 </div>
+                {selectedAddressId === null && (
+                  <label className="flex items-center gap-2 text-sm text-text-muted">
+                    <input type="checkbox" checked={saveNewAddress} onChange={(e) => setSaveNewAddress(e.target.checked)} className="h-4 w-4 accent-[#f68961]" />
+                    Save this address to my account
+                  </label>
+                )}
               </div>
             </div>
 
