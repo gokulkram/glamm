@@ -100,3 +100,52 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
     return false
   }
 }
+
+type ShippingData = {
+  orderNumber: string
+  email: string
+  firstName?: string | null
+  trackingNumber?: string | null
+  trackingCarrier?: string | null
+}
+
+export async function sendShippingNotification(data: ShippingData): Promise<boolean> {
+  const transport = getTransport()
+  if (!transport) {
+    console.warn('SMTP not configured — skipping shipping email')
+    return false
+  }
+
+  const tracking = data.trackingNumber
+    ? `<div style="margin-top:16px;background:#FAF8F5;border:1px solid #EAE3D9;border-radius:12px;padding:16px;">
+         <div style="color:#6B6B6B;font-size:13px;">Tracking number${
+           data.trackingCarrier ? ` (${data.trackingCarrier})` : ''
+         }</div>
+         <div style="font-weight:700;font-size:16px;margin-top:2px;">${data.trackingNumber}</div>
+       </div>`
+    : ''
+
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:28px 24px;color:#fff;text-align:center;">
+      <div style="font-size:20px;font-weight:700;">Your order is on its way! 📦</div>
+      <div style="opacity:.8;margin-top:4px;">Order ${data.orderNumber}</div>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0;">Hi${data.firstName ? ` ${data.firstName}` : ''}, good news — your Glamm Hair order has shipped.</p>
+      ${tracking}
+      <p style="color:#6B6B6B;font-size:13px;margin-top:24px;">You can track your order anytime from your account.</p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: FROM(),
+      to: data.email,
+      subject: `Your Glamm Hair order ${data.orderNumber} has shipped`,
+      html: shell('Shipping update', body),
+    })
+    return true
+  } catch (err) {
+    console.error('sendShippingNotification failed:', err)
+    return false
+  }
+}

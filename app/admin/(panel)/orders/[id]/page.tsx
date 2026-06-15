@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, MapPin, User, CreditCard } from 'lucide-react'
 import { getOrderDetail } from '@/lib/admin/data'
+import OrderManager from './OrderManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,6 +85,14 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
         {/* Customer / shipping / payment */}
         <div className="space-y-6">
+          <OrderManager
+            id={order.id}
+            status={order.status}
+            paymentStatus={order.payment_status}
+            trackingNumber={order.tracking_number}
+            trackingCarrier={order.tracking_carrier}
+          />
+
           <div className="card p-5">
             <div className="flex items-center gap-2 font-semibold mb-3"><User className="h-4 w-4 text-accent" /> Customer</div>
             <div className="text-sm space-y-1">
