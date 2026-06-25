@@ -74,6 +74,7 @@ export default function ProductPage() {
       slug: product.slug,
       size: selectedSize,
       selectedPrice: selectedPrice,
+      quantity: quantity,
     })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)

@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   Users,
   Settings,
+  Newspaper,
   ExternalLink,
   LogOut,
 } from 'lucide-react'
@@ -18,6 +19,7 @@ const NAV = [
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/blog', label: 'Blog', icon: Newspaper },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

@@ -1,38 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Calendar, User, ArrowRight } from 'lucide-react'
+import { getBlogPosts } from '@/lib/blog'
 
-const blogPosts = [
-  {
-    id: 1,
-    title: '10 Tips for Maintaining Your Hair Extensions',
-    excerpt: 'Learn the best practices to keep your extensions looking fresh and beautiful for months.',
-    date: 'March 15, 2024',
-    author: 'Sarah Johnson',
-    category: 'Care Tips',
-    image: '/lucy-photos/_F8A0427-Edit.jpg'
-  },
-  {
-    id: 2,
-    title: 'How to Choose the Right Hair Extension Type',
-    excerpt: 'A comprehensive guide to selecting the perfect extensions for your hair type and lifestyle.',
-    date: 'March 10, 2024',
-    author: 'Emily Davis',
-    category: 'Guides',
-    image: '/lucy-photos/_F8A0433-Edit.jpg'
-  },
-  {
-    id: 3,
-    title: 'Summer Hair Care: Protecting Your Extensions',
-    excerpt: 'Essential tips for keeping your extensions healthy during the hot summer months.',
-    date: 'March 5, 2024',
-    author: 'Jessica Lee',
-    category: 'Seasonal',
-    image: '/lucy-photos/_F8A0475-Edit.jpg'
-  }
-]
+export const dynamic = 'force-dynamic'
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const blogPosts = await getBlogPosts()
+
   return (
     <div className="section">
       <div className="container-max">
@@ -44,7 +19,10 @@ export default function BlogPage() {
           </p>
         </div>
 
-        {/* Blog Grid */}
+        {blogPosts.length === 0 ? (
+          <p className="text-center text-text-muted py-16">No posts yet. Check back soon!</p>
+        ) : (
+        /* Blog Grid */
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {blogPosts.map((post) => (
             <article key={post.id} className="card group overflow-hidden">
@@ -85,6 +63,7 @@ export default function BlogPage() {
             </article>
           ))}
         </div>
+        )}
       </div>
     </div>
   )

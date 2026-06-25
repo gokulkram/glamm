@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, Loader2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react'
 import type { Product, Category } from '@/lib/data'
 
 function slugify(s: string) {
@@ -44,10 +44,30 @@ export default function ProductForm({
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const onTitleChange = (v: string) => {
     setTitle(v)
     if (!slugTouched) setSlug(slugify(v))
+  }
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // let the same file be re-selected later
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/admin/products/upload', { method: 'POST', body: fd })
+    const data = await res.json().catch(() => ({}))
+    setUploading(false)
+    if (!res.ok) {
+      setUploadError(data.error || 'Upload failed')
+      return
+    }
+    setImage(data.url)
   }
 
   const updateRow = (i: number, patch: Partial<SizeRow>) =>
@@ -163,9 +183,27 @@ export default function ProductForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Image path</label>
-            <input className={field} value={image} onChange={(e) => setImage(e.target.value)} placeholder="/products/your-image.jpg" />
-            <p className="text-xs text-text-muted mt-1">Path under /public for now (file uploads come later).</p>
+            <label className="block text-sm font-medium mb-1.5">Product image</label>
+            <div className="flex items-start gap-4">
+              {image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={image} alt="Product preview" className="h-24 w-24 shrink-0 rounded-lg border border-border object-cover bg-surface" />
+              ) : (
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-surface text-text-muted">
+                  <ImageIcon className="h-6 w-6" />
+                </div>
+              )}
+              <div className="flex-1 space-y-2">
+                <label className={`btn btn-secondary inline-flex ${uploading ? 'pointer-events-none opacity-70' : 'cursor-pointer'}`}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? 'Uploading…' : 'Upload image'}
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleUpload} disabled={uploading} />
+                </label>
+                {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
+                <input className={field} value={image} onChange={(e) => setImage(e.target.value)} placeholder="…or paste an image URL / path" />
+                <p className="text-xs text-text-muted">JPG, PNG, WebP or GIF, up to 5 MB. Uploads are stored in Supabase Storage.</p>
+              </div>
+            </div>
           </div>
 
           <label className="inline-flex items-center gap-2 text-sm font-medium">
