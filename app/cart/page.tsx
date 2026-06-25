@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingBag, ArrowRight, Trash2, Plus, Minus } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
+import { useShipping } from '@/contexts/ShippingContext'
+import { computeShipping, freeShippingRemaining } from '@/lib/checkout/shipping'
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, getCartTotal } = useCart()
@@ -26,7 +28,10 @@ export default function CartPage() {
     )
   }
 
+  const shippingCfg = useShipping()
   const cartTotal = getCartTotal()
+  const shipping = computeShipping(cartTotal, shippingCfg)
+  const awayFromFree = freeShippingRemaining(cartTotal, shippingCfg)
 
   return (
     <div className="section">
@@ -92,11 +97,20 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-text-muted">
                   <span>Shipping</span>
-                  <span className="text-green-600">Free</span>
+                  {shipping === 0 ? (
+                    <span className="text-green-600">Free</span>
+                  ) : (
+                    <span>${shipping.toFixed(2)}</span>
+                  )}
                 </div>
+                {awayFromFree > 0 && (
+                  <p className="text-xs text-accent">
+                    Add ${awayFromFree.toFixed(2)} more for free shipping
+                  </p>
+                )}
                 <div className="border-t pt-3 flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-accent">${cartTotal.toFixed(2)}</span>
+                  <span className="text-accent">${(cartTotal + shipping).toFixed(2)}</span>
                 </div>
               </div>
               <Link

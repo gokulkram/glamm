@@ -9,12 +9,14 @@ import ProductCard from '@/components/ProductCard'
 import { ShoppingCart, Heart, Check, Star, Truck, Shield, RotateCcw, ChevronRight, MessageCircle, Award, Package, Zap, Info, ImageIcon } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
+import { useShipping } from '@/contexts/ShippingContext'
 
 export default function ProductPage() {
   const params = useParams()
   const slug = params.slug as string
   const { addToCart } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
+  const { freeThreshold } = useShipping()
 
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -182,7 +184,7 @@ export default function ProductPage() {
                     <Truck className="w-8 h-8 text-white" />
                   </div>
                   <p className="text-base font-bold mb-1 text-text">Free Shipping</p>
-                  <p className="text-sm text-text-muted">On orders $100+</p>
+                  <p className="text-sm text-text-muted">On orders ${freeThreshold}+</p>
                 </div>
               </div>
               <div className="group relative overflow-hidden">
@@ -478,7 +480,7 @@ export default function ProductPage() {
                         <ul className="space-y-2 text-text-muted">
                           <li className="flex items-center gap-2">
                             <Check className="w-4 h-4 text-accent flex-shrink-0" />
-                            <span><strong>FREE</strong> on orders over $100</span>
+                            <span><strong>FREE</strong> on orders over ${freeThreshold}</span>
                           </li>
                           <li className="flex items-center gap-2">
                             <Check className="w-4 h-4 text-accent flex-shrink-0" />

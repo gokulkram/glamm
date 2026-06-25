@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Search, HelpCircle, Truck, Package, Scissors, RefreshCw } from 'lucide-react'
+import { useShipping } from '@/contexts/ShippingContext'
 
 type Category = 'all' | 'shipping' | 'products' | 'care' | 'returns'
 
@@ -49,8 +50,19 @@ export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<Category>('all')
+  const { freeThreshold, standardRate } = useShipping()
 
-  const filteredFaqs = faqs.filter(faq => {
+  // Keep the shipping policy answer in sync with the admin-set rates.
+  const resolvedFaqs = faqs.map((f) =>
+    f.q === 'Do you offer free shipping?'
+      ? {
+          ...f,
+          a: `Yes! We offer free standard shipping on all orders over $${freeThreshold} within the United States. For orders under $${freeThreshold}, standard shipping is $${standardRate}. Express shipping is available for an additional fee.`,
+        }
+      : f,
+  )
+
+  const filteredFaqs = resolvedFaqs.filter(faq => {
     const matchesCategory = activeCategory === 'all' || faq.category === activeCategory
     const matchesSearch = searchQuery === '' ||
       faq.q.toLowerCase().includes(searchQuery.toLowerCase()) ||

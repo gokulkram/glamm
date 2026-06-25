@@ -1,13 +1,32 @@
 import Link from 'next/link'
 import { CheckCircle, Package, Mail, Home } from 'lucide-react'
+import { getStripe } from '@/lib/stripe'
+import { createOrderFromPaymentIntent } from '@/lib/checkout/stripeOrder'
 
-export default function OrderConfirmationPage({
+export const dynamic = 'force-dynamic'
+
+export default async function OrderConfirmationPage({
   searchParams,
 }: {
-  searchParams: { order?: string }
+  searchParams: { order?: string; payment_intent?: string }
 }) {
-  const orderNumber =
-    searchParams.order || `GLM-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+  let orderNumber: string | null = searchParams.order ?? null
+
+  // 3-D Secure return: finalise the order from the PaymentIntent (idempotent).
+  if (!orderNumber && searchParams.payment_intent) {
+    const stripe = getStripe()
+    if (stripe) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(searchParams.payment_intent)
+        if (pi.status === 'succeeded') {
+          const res = await createOrderFromPaymentIntent(pi)
+          if (res.ok) orderNumber = res.orderNumber
+        }
+      } catch {
+        /* fall through — show a generic confirmation */
+      }
+    }
+  }
 
   return (
     <div className="section">
@@ -21,9 +40,11 @@ export default function OrderConfirmationPage({
           <p className="text-xl text-text-muted mb-2">
             Thank you for your purchase
           </p>
-          <p className="text-text-muted">
-            Order #{orderNumber}
-          </p>
+          {orderNumber && (
+            <p className="text-text-muted">
+              Order #{orderNumber}
+            </p>
+          )}
         </div>
 
         <div className="card p-8 mb-8">

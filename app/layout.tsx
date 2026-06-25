@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import ConditionalChrome from '@/components/layout/ConditionalChrome'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
+import { ShippingProvider } from '@/contexts/ShippingContext'
 
 export const metadata: Metadata = {
   title: 'Glamm Hair Extensions | Premium 100% Virgin Human Hair',
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex flex-col min-h-screen">
-        <CartProvider>
-          <WishlistProvider>
-            <ConditionalChrome>{children}</ConditionalChrome>
-          </WishlistProvider>
-        </CartProvider>
+        <ShippingProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <ConditionalChrome>{children}</ConditionalChrome>
+            </WishlistProvider>
+          </CartProvider>
+        </ShippingProvider>
       </body>
     </html>
   )

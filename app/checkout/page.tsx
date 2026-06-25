@@ -1,22 +1,116 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import Script from 'next/script'
 import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck } from 'lucide-react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { computeShipping } from '@/lib/checkout/shipping'
 import { useCart } from '@/contexts/CartContext'
+import { useShipping } from '@/contexts/ShippingContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Address } from '@/lib/account/data'
+
+const pubKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+const stripePromise = pubKey ? loadStripe(pubKey) : null
+
+type CustomerInfo = Record<string, string>
+
+// Card form rendered inside <Elements>. Confirms the PaymentIntent and, on
+// success, finalises the order. (3-D Secure cards redirect to /order-confirmation,
+// which finalises from the PaymentIntent instead.)
+function StripeCardForm({
+  customerInfo,
+  total,
+  paymentIntentId,
+  isProcessing,
+  onError,
+  onProcessingChange,
+}: {
+  customerInfo: CustomerInfo
+  total: number
+  paymentIntentId: string
+  isProcessing: boolean
+  onError: (msg: string | null) => void
+  onProcessingChange: (v: boolean) => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const router = useRouter()
+  const { clearCart } = useCart()
+
+  const pay = async () => {
+    if (!stripe || !elements) return
+    const required = ['email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip']
+    if (required.some((f) => !customerInfo[f]?.trim())) {
+      onError('Please fill in all required fields before paying.')
+      return
+    }
+    onError(null)
+    onProcessingChange(true)
+
+    // Attach contact/shipping to the PaymentIntent so the order can be built on
+    // success even after a 3-D Secure redirect.
+    const prep = await fetch('/api/checkout/prepare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentIntentId, customer: customerInfo }),
+    })
+    if (!prep.ok) {
+      const d = await prep.json().catch(() => ({}))
+      onError(d.error || 'Could not start payment. Please try again.')
+      onProcessingChange(false)
+      return
+    }
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${window.location.origin}/order-confirmation` },
+      redirect: 'if_required',
+    })
+
+    if (error) {
+      onError(error.message || 'Your card was declined. Please try another card.')
+      onProcessingChange(false)
+      return
+    }
+    if (paymentIntent?.status === 'succeeded') {
+      const res = await fetch('/api/checkout/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.success) {
+        onError(data.error || 'Payment succeeded but the order could not be saved. Please contact support.')
+        onProcessingChange(false)
+        return
+      }
+      clearCart()
+      router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`)
+      return
+    }
+    onProcessingChange(false)
+  }
+
+  return (
+    <div className="mb-4">
+      <PaymentElement options={{ layout: 'tabs' }} />
+      <button onClick={pay} disabled={!stripe || isProcessing} className="btn btn-primary w-full mt-5">
+        {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : `Pay $${total.toFixed(2)}`}
+      </button>
+    </div>
+  )
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cart, getCartTotal, clearCart } = useCart()
-  const [clientToken, setClientToken] = useState<string | null>(null)
-  const [epi, setEpi] = useState<string>('')
-  const [isDemo, setIsDemo] = useState(true)
-  const [valorReady, setValorReady] = useState(false)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [cardAvailable, setCardAvailable] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,42 +128,41 @@ export default function CheckoutPage() {
     zip: '',
   })
 
+  const shippingCfg = useShipping()
   const cartTotal = getCartTotal()
+  const shipping = computeShipping(cartTotal, shippingCfg)
+  const orderTotal = Number((cartTotal + shipping).toFixed(2))
 
+  // Create the Stripe PaymentIntent once the cart is known. If Stripe isn't
+  // configured (or it errors), fall back to manual order placement.
+  const initedRef = useRef(false)
   useEffect(() => {
-    if (cart.length === 0) {
-      setIsLoading(false)
-      return
-    }
-
-    // Fetch client token from our API
-    const fetchToken = async () => {
+    if (cart.length === 0 || initedRef.current) return
+    initedRef.current = true
+    ;(async () => {
       try {
-        const response = await fetch('/api/valor/get-client-token', {
+        const res = await fetch('/api/checkout/create-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: cartTotal.toFixed(2) }),
+          body: JSON.stringify({
+            items: cart.map((it) => ({ product_id: it.id, size: it.size, quantity: it.quantity })),
+          }),
         })
-        const data = await response.json()
-
-        if (data.success) {
-          setClientToken(data.clientToken)
-          setEpi(data.epi)
-          setIsDemo(data.isDemo)
-          setValorReady(true)
+        if (res.ok) {
+          const data = await res.json()
+          setClientSecret(data.clientSecret)
+          setPaymentIntentId(data.paymentIntentId)
+          setCardAvailable(true)
         } else {
-          // Card gateway not configured yet → fall back to manual order placement
-          setValorReady(false)
+          setCardAvailable(false)
         }
-      } catch (err) {
-        setValorReady(false)
+      } catch {
+        setCardAvailable(false)
       } finally {
         setIsLoading(false)
       }
-    }
-
-    fetchToken()
-  }, [cart.length, cartTotal])
+    })()
+  }, [cart.length])
 
   // Detect a logged-in customer and prefill their details
   const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
@@ -160,7 +253,6 @@ export default function CheckoutPage() {
             quantity: it.quantity,
             unit_price: it.selectedPrice,
           })),
-          shipping: 0,
           payment: { method: 'manual', status: 'pending' },
         }),
       })
@@ -345,15 +437,21 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {valorReady ? (
+              {cardAvailable && clientSecret && stripePromise ? (
                 <>
-                  {/* Valor Passage.js card form */}
-                  <div id="valor-fields" className="mb-4"></div>
-                  {isDemo && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm">
-                      <strong>Test Mode:</strong> Use card 4111111111111111, Address: 8320, ZIP: 85284
-                    </div>
-                  )}
+                  <Elements
+                    stripe={stripePromise}
+                    options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#f68961' } } }}
+                  >
+                    <StripeCardForm
+                      customerInfo={customerInfo}
+                      total={orderTotal}
+                      paymentIntentId={paymentIntentId!}
+                      isProcessing={isProcessing}
+                      onError={setError}
+                      onProcessingChange={setIsProcessing}
+                    />
+                  </Elements>
                 </>
               ) : (
                 <>
@@ -369,7 +467,7 @@ export default function CheckoutPage() {
                     {isProcessing ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      `Place Order — $${cartTotal.toFixed(2)}`
+                      `Place Order — $${orderTotal.toFixed(2)}`
                     )}
                   </button>
                 </>
@@ -406,10 +504,13 @@ export default function CheckoutPage() {
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between"><span>Subtotal</span><span>${cartTotal.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Shipping</span><span>Free</span></div>
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+                  <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `$${shipping.toFixed(2)}`}</span>
+                </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Total</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>${orderTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -417,24 +518,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Valor Passage.js Script */}
-      {clientToken && (
-        <Script
-          src="https://js.valorpaytech.com/V1/js/Passage.min.js"
-          data-name="valor_passage"
-          data-clientToken={clientToken}
-          data-epi={epi}
-          data-demo={isDemo ? 'true' : undefined}
-          data-billingAddress="false"
-          data-email="false"
-          data-phone="false"
-          data-cardholderName="true"
-          data-submitText={`Pay $${cartTotal.toFixed(2)}`}
-          data-submitBg="#B76E79"
-          data-submitColor="#ffffff"
-          strategy="lazyOnload"
-        />
-      )}
     </div>
   )
 }

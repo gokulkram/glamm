@@ -3,8 +3,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Shield, Truck, RotateCcw, CreditCard, ArrowRight } from 'lucide-react'
+import { useShipping } from '@/contexts/ShippingContext'
 
 export function CartPagePromo() {
+  const { freeThreshold } = useShipping()
   return (
     <>
       {/* Trust Badges */}
@@ -20,7 +22,7 @@ export function CartPagePromo() {
               {
                 icon: Truck,
                 title: 'Free Shipping',
-                description: 'Orders $100+'
+                description: `Orders $${freeThreshold}+`
               },
               {
                 icon: RotateCcw,

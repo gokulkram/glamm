@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useShipping } from '@/contexts/ShippingContext'
 import { useSearchParams } from 'next/navigation'
 import type { Product, Category } from '@/lib/data'
 import ProductCard from '@/components/ProductCard'
@@ -9,6 +10,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 function ShopContent() {
+  const { freeThreshold } = useShipping()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -235,7 +237,7 @@ function ShopContent() {
               </h2>
               <p className="text-xl text-text/80 leading-relaxed">
                 Transform your look with our premium collection of 100% virgin human hair extensions.
-                <span className="block mt-2 font-semibold text-accent">Free shipping on orders over $100.</span>
+                <span className="block mt-2 font-semibold text-accent">Free shipping on orders over ${freeThreshold}.</span>
               </p>
               <ul className="space-y-4 pt-4">
                 {['Premium Quality - 100% Virgin Human Hair', 'Natural Look - Blends Seamlessly', 'Long Lasting - Up to 12 Months', 'Easy Application - Professional Results'].map((item, i) => (

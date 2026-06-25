@@ -2,8 +2,10 @@
 
 import Image from 'next/image'
 import { Shield, Lock, CreditCard, Truck } from 'lucide-react'
+import { useShipping } from '@/contexts/ShippingContext'
 
 export function CheckoutPagePromo() {
+  const { freeThreshold } = useShipping()
   return (
     <>
       {/* Security Banner */}
@@ -25,7 +27,7 @@ export function CheckoutPagePromo() {
               },
               {
                 icon: Truck,
-                text: 'Free Shipping Over $100'
+                text: `Free Shipping Over $${freeThreshold}`
               }
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3">
@@ -65,7 +67,7 @@ export function CheckoutPagePromo() {
         <div className="bg-gradient-to-br from-accent/5 to-accent/10 rounded-2xl p-6 space-y-4">
           <h4 className="font-bold text-text text-lg mb-4">Why Shop With Us</h4>
           {[
-            'Free shipping on orders over $100',
+            `Free shipping on orders over $${freeThreshold}`,
             '30-day money-back guarantee',
             'Secure payment processing',
             'Expert customer support',

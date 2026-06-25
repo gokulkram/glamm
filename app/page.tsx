@@ -5,6 +5,7 @@ import Hero from '@/components/Hero'
 import ProductCard from '@/components/ProductCard'
 import { LucyGallery } from '@/components/LucyGallery'
 import { getProducts, getCategories } from '@/lib/products'
+import { getShippingConfig } from '@/lib/settings'
 import { BadgeCheck, Package, ShieldCheck, Heart, Star, Mail, Gift, Instagram } from 'lucide-react'
 import ReviewCarousel from '@/components/ReviewCarousel'
 
@@ -29,7 +30,7 @@ const testimonials = [
 export const revalidate = 60
 
 export default async function Home() {
-  const [products, categories] = await Promise.all([getProducts(), getCategories()])
+  const [products, categories, shipping] = await Promise.all([getProducts(), getCategories(), getShippingConfig()])
 
   return (
     <>
@@ -87,7 +88,7 @@ export default async function Home() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: BadgeCheck, title: 'Premium Quality', desc: '100% virgin human hair sourced ethically from trusted suppliers' },
-            { icon: Package, title: 'Free Shipping', desc: 'Free standard shipping on all orders over $100' },
+            { icon: Package, title: 'Free Shipping', desc: `Free standard shipping on all orders over $${shipping.freeThreshold}` },
             { icon: ShieldCheck, title: 'Secure Payment', desc: 'Safe and secure checkout with multiple payment options' },
             { icon: Heart, title: 'Customer Love', desc: 'Join thousands of satisfied customers who trust Glamm Hair' },
           ].map((feature, i) => (
