@@ -1,7 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { DEFAULT_SHIPPING, type ShippingConfig } from '@/lib/checkout/shipping'
+import { DEFAULT_PRODUCT_CONTENT, type ProductContent } from '@/lib/content'
 
 const SHIPPING_KEY = 'shipping'
+const PRODUCT_CONTENT_KEY = 'product_content'
 
 /**
  * Read the shipping config from the DB. Falls back to defaults if the
@@ -52,5 +54,51 @@ export async function setShippingConfig(
     return { ok: true }
   } catch {
     return { ok: false, error: 'Could not save settings' }
+  }
+}
+
+/**
+ * Site-wide product content (Hair Care + Shipping & Returns). Falls back to
+ * defaults if the table/row is missing, so product pages keep working.
+ */
+export async function getProductContent(): Promise<ProductContent> {
+  try {
+    const sb = supabaseAdmin()
+    const { data, error } = await sb
+      .from('app_settings')
+      .select('value')
+      .eq('key', PRODUCT_CONTENT_KEY)
+      .maybeSingle()
+    if (error || !data) return DEFAULT_PRODUCT_CONTENT
+    const v = (data.value ?? {}) as Partial<ProductContent>
+    return {
+      care: typeof v.care === 'string' && v.care.trim() ? v.care : DEFAULT_PRODUCT_CONTENT.care,
+      shipping: typeof v.shipping === 'string' && v.shipping.trim() ? v.shipping : DEFAULT_PRODUCT_CONTENT.shipping,
+    }
+  } catch {
+    return DEFAULT_PRODUCT_CONTENT
+  }
+}
+
+export async function setProductContent(
+  content: ProductContent,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const care = String(content.care ?? '').trim()
+  const shipping = String(content.shipping ?? '').trim()
+  if (!care || !shipping) {
+    return { ok: false, error: 'Both Hair Care and Shipping content are required' }
+  }
+  try {
+    const sb = supabaseAdmin()
+    const { error } = await sb
+      .from('app_settings')
+      .upsert({ key: PRODUCT_CONTENT_KEY, value: { care, shipping } }, { onConflict: 'key' })
+    if (error) {
+      console.error('setProductContent failed:', error)
+      return { ok: false, error: 'Could not save content (has settings.sql been run?)' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not save content' }
   }
 }

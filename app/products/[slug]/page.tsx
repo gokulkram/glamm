@@ -10,6 +10,8 @@ import { ShoppingCart, Heart, Check, Star, Truck, Shield, RotateCcw, ChevronRigh
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useShipping } from '@/contexts/ShippingContext'
+import ProductReviews from '@/components/ProductReviews'
+import { DEFAULT_PRODUCT_CONTENT, parseContentBlocks, type ProductContent } from '@/lib/content'
 
 export default function ProductPage() {
   const params = useParams()
@@ -25,6 +27,16 @@ export default function ProductPage() {
   const [addedToCart, setAddedToCart] = useState(false)
   const [activeTab, setActiveTab] = useState('description')
   const [selectedImage, setSelectedImage] = useState(0)
+  const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number }>({ average: 0, count: 0 })
+  const [content, setContent] = useState<ProductContent>(DEFAULT_PRODUCT_CONTENT)
+
+  // Load the site-wide Hair Care + Shipping content (admin-editable).
+  useEffect(() => {
+    fetch('/api/product-content')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setContent({ care: d.care ?? DEFAULT_PRODUCT_CONTENT.care, shipping: d.shipping ?? DEFAULT_PRODUCT_CONTENT.shipping }) })
+      .catch(() => {})
+  }, [])
 
   // Load the catalog from the database
   useEffect(() => {
@@ -36,6 +48,16 @@ export default function ProductPage() {
   }, [])
 
   const product = allProducts.find((p) => p.slug === slug)
+  const productId = product?.id
+
+  // Load the rating summary for the header badge once the product is known.
+  useEffect(() => {
+    if (!productId) return
+    fetch(`/api/reviews?productId=${productId}`)
+      .then((r) => r.json())
+      .then((d) => setRatingSummary(d.summary ?? { average: 0, count: 0 }))
+      .catch(() => {})
+  }, [productId])
 
   if (loading) {
     return (
@@ -223,19 +245,30 @@ export default function ProductPage() {
 
             {/* Reviews */}
             <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <span className="font-bold">5.0</span>
-              </div>
-              <span className="text-text-muted">(127 reviews)</span>
-              <button className="text-accent hover:underline font-medium flex items-center gap-1">
+              {ratingSummary.count > 0 ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${i < Math.round(ratingSummary.average) ? 'fill-accent text-accent' : 'text-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-bold">{ratingSummary.average.toFixed(1)}</span>
+                  </div>
+                  <a href="#reviews" className="text-text-muted hover:text-accent">
+                    ({ratingSummary.count} review{ratingSummary.count === 1 ? '' : 's'})
+                  </a>
+                </>
+              ) : (
+                <span className="text-text-muted">No reviews yet</span>
+              )}
+              <a href="#reviews" className="text-accent hover:underline font-medium flex items-center gap-1">
                 <MessageCircle className="w-4 h-4" />
                 Write a review
-              </button>
+              </a>
             </div>
 
             {/* About This Product Box */}
@@ -398,155 +431,67 @@ export default function ProductPage() {
             <div className="prose max-w-none">
               {activeTab === 'description' && (
                 <div className="animate-fade-in">
+                  {/* Product Description */}
                   <h3 className="text-3xl font-bold mb-6">Product Description</h3>
                   <p className="text-lg text-text-muted leading-relaxed mb-6">{product.description}</p>
                   <p className="text-text-muted leading-relaxed mb-6">
                     Our {product.title} extensions are crafted from 100% premium human hair, sourced ethically and processed with care to maintain the natural texture and shine. Each bundle is carefully selected to ensure consistent quality and longevity.
                   </p>
-                  <h4 className="text-2xl font-bold mb-4 mt-8">Why Choose Our Hair Extensions?</h4>
-                  <ul className="space-y-3">
-                    {product.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-3 text-lg">
-                        <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-1 flex-shrink-0">
-                          <Check className="w-4 h-4 text-accent" />
-                        </div>
-                        <span>
-                          <strong>{feature}:</strong> Premium quality guaranteed for lasting beauty and natural appearance.
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* Features */}
+                  {product.features.length > 0 && (
+                    <>
+                      <h4 className="text-2xl font-bold mb-4 mt-8">Features</h4>
+                      <ul className="space-y-3">
+                        {product.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-3 text-lg">
+                            <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-1 flex-shrink-0">
+                              <Check className="w-4 h-4 text-accent" />
+                            </div>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  {/* Benefits */}
+                  {product.benefits.length > 0 && (
+                    <>
+                      <h4 className="text-2xl font-bold mb-4 mt-8">Benefits</h4>
+                      <ul className="space-y-3">
+                        {product.benefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start gap-3 text-lg">
+                            <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-1 flex-shrink-0">
+                              <Star className="w-4 h-4 text-accent fill-accent" />
+                            </div>
+                            <span>{benefit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </div>
               )}
               {activeTab === 'care' && (
                 <div className="animate-fade-in">
                   <h3 className="text-3xl font-bold mb-6">Hair Care Instructions</h3>
-                  <p className="text-lg text-text-muted mb-6">Proper care ensures your hair extensions maintain their beautiful texture and last longer. Follow these professional tips:</p>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="card p-6">
-                      <h4 className="font-bold text-xl mb-4">Washing</h4>
-                      <ul className="space-y-2 text-text-muted">
-                        <li>• Use sulfate-free shampoo and conditioner</li>
-                        <li>• Wash in lukewarm water, not hot</li>
-                        <li>• Gently massage, don&apos;t rub vigorously</li>
-                        <li>• Rinse thoroughly to remove all product</li>
-                      </ul>
-                    </div>
-                    <div className="card p-6">
-                      <h4 className="font-bold text-xl mb-4">Styling</h4>
-                      <ul className="space-y-2 text-text-muted">
-                        <li>• Detangle with wide-tooth comb when wet</li>
-                        <li>• Air dry or use low heat settings</li>
-                        <li>• Apply heat protectant before styling</li>
-                        <li>• Avoid excessive heat to prolong lifespan</li>
-                      </ul>
-                    </div>
-                    <div className="card p-6">
-                      <h4 className="font-bold text-xl mb-4">Maintenance</h4>
-                      <ul className="space-y-2 text-text-muted">
-                        <li>• Apply leave-in conditioner regularly</li>
-                        <li>• Deep condition weekly for best results</li>
-                        <li>• Brush gently from ends to roots</li>
-                        <li>• Use silk pillowcase to reduce tangling</li>
-                      </ul>
-                    </div>
-                    <div className="card p-6">
-                      <h4 className="font-bold text-xl mb-4">Storage</h4>
-                      <ul className="space-y-2 text-text-muted">
-                        <li>• Store in cool, dry place when not in use</li>
-                        <li>• Keep in original packaging or silk bag</li>
-                        <li>• Avoid direct sunlight exposure</li>
-                        <li>• Ensure completely dry before storing</li>
-                      </ul>
-                    </div>
-                  </div>
+                  <ContentBody raw={content.care} />
                 </div>
               )}
               {activeTab === 'shipping' && (
                 <div className="animate-fade-in">
-                  <h3 className="text-3xl font-bold mb-6">Shipping & Returns</h3>
-
-                  {/* Shipping Information */}
-                  <div className="mb-8">
-                    <h4 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                      <Truck className="w-6 h-6 text-accent" />
-                      Shipping Information
-                    </h4>
-                    <p className="text-text-muted mb-6">We offer fast, reliable shipping to ensure your hair extensions arrive in perfect condition.</p>
-
-                    <div className="grid md:grid-cols-2 gap-6 mb-6">
-                      <div className="card p-6">
-                        <h5 className="font-bold text-lg mb-3">Standard Shipping</h5>
-                        <ul className="space-y-2 text-text-muted">
-                          <li className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-accent flex-shrink-0" />
-                            <span><strong>FREE</strong> on orders over ${freeThreshold}</span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-accent flex-shrink-0" />
-                            <span>Delivery: 3-5 business days</span>
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="card p-6">
-                        <h5 className="font-bold text-lg mb-3">Express Shipping</h5>
-                        <ul className="space-y-2 text-text-muted">
-                          <li className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-accent flex-shrink-0" />
-                            <span><strong>$15.99</strong> flat rate</span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-accent flex-shrink-0" />
-                            <span>Delivery: 1-2 business days</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <p className="text-text-muted text-sm">All orders are processed within 24 hours. You&apos;ll receive a tracking number via email once your order ships.</p>
-                  </div>
-
-                  {/* Returns & Exchanges */}
-                  <div>
-                    <h4 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                      <RotateCcw className="w-6 h-6 text-accent" />
-                      Returns & Exchanges
-                    </h4>
-                    <p className="text-text-muted mb-6">We want you to love your purchase! If you&apos;re not completely satisfied, we offer a hassle-free 30-day return policy.</p>
-
-                    <ul className="space-y-3 mb-6">
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <Check className="w-4 h-4 text-accent" />
-                        </div>
-                        <span className="text-text-muted">Products must be unused and in original packaging</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <Check className="w-4 h-4 text-accent" />
-                        </div>
-                        <span className="text-text-muted">Return shipping is free for defective items</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <Check className="w-4 h-4 text-accent" />
-                        </div>
-                        <span className="text-text-muted">Refunds processed within 5-7 business days</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-accent/10 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <Check className="w-4 h-4 text-accent" />
-                        </div>
-                        <span className="text-text-muted">Exchanges available for different sizes or styles</span>
-                      </li>
-                    </ul>
-
-                    <p className="text-text-muted">Contact our customer service team at <a href="mailto:support@glammhair.com" className="text-accent hover:underline font-medium">support@glammhair.com</a> to initiate a return or exchange.</p>
-                  </div>
+                  <h3 className="text-3xl font-bold mb-6">Shipping &amp; Returns</h3>
+                  <ContentBody raw={content.shipping} />
                 </div>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Reviews */}
+        <div id="reviews" className="scroll-mt-24">
+          <ProductReviews productId={product.id} />
         </div>
 
         {/* Related Products */}
@@ -572,6 +517,33 @@ export default function ProductPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// Renders markdown-lite product content (## headings, - bullets, paragraphs).
+function ContentBody({ raw }: { raw: string }) {
+  const blocks = parseContentBlocks(raw)
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, i) => {
+        if (block.type === 'heading') {
+          return <h4 key={i} className="text-2xl font-bold mt-8 mb-2">{block.text}</h4>
+        }
+        if (block.type === 'list') {
+          return (
+            <ul key={i} className="space-y-2">
+              {block.items.map((item, j) => (
+                <li key={j} className="flex items-start gap-3 text-text-muted">
+                  <Check className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        return <p key={i} className="text-lg text-text-muted leading-relaxed">{block.text}</p>
+      })}
     </div>
   )
 }

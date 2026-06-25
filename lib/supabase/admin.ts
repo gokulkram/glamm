@@ -24,5 +24,12 @@ export function supabaseAdmin() {
     auth: { persistSession: false, autoRefreshToken: false },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     realtime: { transport: ws as any },
+    global: {
+      // Next.js patches global fetch and caches GETs by default, which would
+      // serve stale data after an admin edits products / settings / content.
+      // Force every PostgREST request to bypass that cache.
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, { ...init, cache: 'no-store' }),
+    },
   })
 }
