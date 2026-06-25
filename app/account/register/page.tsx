@@ -44,8 +44,12 @@ function RegisterForm() {
       router.replace(`/account/login?next=${encodeURIComponent(next)}`)
       return
     }
-    router.replace(next)
-    router.refresh()
+    // Full-page navigation so the redirect always lands and middleware /
+    // server components pick up the fresh session cookies. A client-side
+    // router.replace + refresh here can race and leave the button spinning.
+    // Only allow internal paths to avoid an open redirect via ?next=.
+    const dest = next.startsWith('/') && !next.startsWith('//') ? next : '/account'
+    window.location.assign(dest)
   }
 
   const field =

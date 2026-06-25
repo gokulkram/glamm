@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Loader2 } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/account'
   const [email, setEmail] = useState('')
@@ -26,8 +25,12 @@ function LoginForm() {
       setLoading(false)
       return
     }
-    router.replace(next)
-    router.refresh()
+    // Full-page navigation so the redirect always lands and middleware /
+    // server components pick up the fresh session cookies. A client-side
+    // router.replace + refresh here can race and leave the button spinning.
+    // Only allow internal paths to avoid an open redirect via ?next=.
+    const dest = next.startsWith('/') && !next.startsWith('//') ? next : '/account'
+    window.location.assign(dest)
   }
 
   const field =
