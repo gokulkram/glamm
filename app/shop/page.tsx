@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { Product, Category } from '@/lib/data'
 import ProductCard from '@/components/ProductCard'
 import { Search, X, Sparkles, ChevronRight, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-export default function ShopPage() {
+function ShopContent() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,11 +28,13 @@ export default function ShopPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Pick up ?category= from the URL (used by header dropdown, footer & homepage links)
+  // Keep the selected category in sync with ?category= (header dropdown, footer &
+  // homepage links). Using useSearchParams re-runs this on client-side navigation
+  // too — switching categories from the Shop menu while already on /shop.
+  const searchParams = useSearchParams()
   useEffect(() => {
-    const cat = new URLSearchParams(window.location.search).get('category')
-    if (cat) setSelectedCategory(cat)
-  }, [])
+    setSelectedCategory(searchParams.get('category') ?? 'all')
+  }, [searchParams])
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products]
@@ -258,6 +261,14 @@ export default function ShopPage() {
         </div>
       </section>
     </>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopContent />
+    </Suspense>
   )
 }
 
