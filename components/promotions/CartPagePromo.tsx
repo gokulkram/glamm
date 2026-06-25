@@ -71,6 +71,7 @@ export function CartPagePromo() {
                     src={`/lucy-photos/${product.image}`}
                     alt={product.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -99,6 +100,7 @@ export function CartPagePromo() {
                 src="/lucy-photos/_F8A0333-Edit.jpg"
                 alt="Premium Quality Hair"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>

@@ -58,9 +58,10 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 <div key={`${item.id}-${item.size}`} className="card p-4 flex gap-4">
                   <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                     <Image 
-                      src={item.image} 
-                      alt={item.title} 
-                      fill 
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="80px"
                       className="object-cover" 
                     />
                   </div>

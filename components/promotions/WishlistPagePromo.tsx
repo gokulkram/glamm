@@ -55,6 +55,7 @@ export function WishlistPagePromo() {
                 src="/lucy-photos/_F8A0475-Edit.jpg"
                 alt="Wishlist Favorites"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -73,6 +74,7 @@ export function WishlistPagePromo() {
                   src="/lucy-photos/_F8A0489-Edit.jpg"
                   alt="Gift Registry"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
@@ -140,6 +142,7 @@ export function WishlistPagePromo() {
                   src={`/lucy-photos/${item.image}`}
                   alt={item.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

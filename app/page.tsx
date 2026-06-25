@@ -110,6 +110,7 @@ export default async function Home() {
               src="/lucy-photos/_F8A0400-Edit.jpg"
               alt="Beautiful hair transformation"
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
           </div>

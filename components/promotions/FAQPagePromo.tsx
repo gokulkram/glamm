@@ -13,6 +13,7 @@ export function FAQPagePromo() {
           src="/lucy-photos/_F8A0427-Edit.jpg"
           alt="FAQ - Glamm Hair"
           fill
+          sizes="100vw"
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
@@ -91,6 +92,7 @@ export function FAQPagePromo() {
                 src="/lucy-photos/_F8A0433-Edit.jpg"
                 alt="Expert Hair Consultation"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>

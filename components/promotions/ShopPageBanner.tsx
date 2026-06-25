@@ -15,6 +15,7 @@ export function ShopPageBanner() {
               src="/lucy-photos/_F8A0400-Edit.jpg"
               alt="Premium Hair Extensions Collection"
               fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />

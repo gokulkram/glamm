@@ -61,6 +61,7 @@ export function LucyGallery() {
                 src={photo.src}
                 alt={`Glamm Hair Extensions Showcase ${photo.id}`}
                 fill
+                sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               

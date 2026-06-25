@@ -13,6 +13,7 @@ export function AboutPagePromo() {
           src="/lucy-photos/_F8A0376-Edit.jpg"
           alt="About Glamm Hair"
           fill
+          sizes="100vw"
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/50" />
@@ -87,6 +88,7 @@ export function AboutPagePromo() {
                 src="/lucy-photos/_F8A0381-Edit.jpg"
                 alt="Glamm Hair Quality"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>

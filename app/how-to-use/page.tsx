@@ -25,6 +25,7 @@ export default function HowToUsePage() {
             src="/lucy-photos/_F8A0317-Edit.jpg"
             alt="How To Use Hair Extensions"
             fill
+            sizes="100vw"
             className="object-cover object-center"
             priority
           />

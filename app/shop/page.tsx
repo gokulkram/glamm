@@ -204,7 +204,7 @@ export default function ShopPage() {
                 alt="Premium Hair Extensions Collection"
                 src="/lucy-photos/_F8A0400-Edit.jpg"
                 fill
-                sizes="100vw"
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>

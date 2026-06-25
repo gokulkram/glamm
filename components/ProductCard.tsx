@@ -50,7 +50,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               src={product.image}
               alt={product.title}
               fill
-              sizes="100vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={`object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}

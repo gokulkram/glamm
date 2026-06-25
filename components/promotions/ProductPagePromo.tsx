@@ -56,6 +56,7 @@ export function ProductPagePromo() {
                 src="/lucy-photos/_F8A0386-Edit.jpg"
                 alt="How to Style Your Extensions"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>
@@ -118,6 +119,7 @@ export function ProductPagePromo() {
                   src={`/lucy-photos/${item.image}`}
                   alt={item.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

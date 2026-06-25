@@ -13,6 +13,7 @@ export function CheckoutHero() {
           src="/lucy-photos/_F8A0427-Edit.jpg"
           alt="Secure Checkout"
           fill
+          sizes="100vw"
           className="object-cover opacity-30"
           priority
         />

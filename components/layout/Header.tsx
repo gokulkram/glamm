@@ -94,8 +94,8 @@ export default function Header() {
             <Image
               src="/glamm-logo.png"
               alt="Glamm Hair Extensions"
-              width={220}
-              height={80}
+              width={1164}
+              height={548}
               className="h-16 w-auto md:h-20 md:w-auto"
               priority
             />

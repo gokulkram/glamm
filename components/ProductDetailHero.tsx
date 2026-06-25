@@ -21,6 +21,7 @@ export function ProductDetailHero({ title, category, rating = 5, reviews = 0 }: 
             src="/lucy-photos/_F8A0433-Edit.jpg"
             alt="Product showcase"
             fill
+            sizes="33vw"
             className="object-cover"
           />
         </div>
@@ -29,6 +30,7 @@ export function ProductDetailHero({ title, category, rating = 5, reviews = 0 }: 
             src="/lucy-photos/_F8A0475-Edit.jpg"
             alt="Product showcase"
             fill
+            sizes="33vw"
             className="object-cover"
           />
         </div>
@@ -37,6 +39,7 @@ export function ProductDetailHero({ title, category, rating = 5, reviews = 0 }: 
             src="/lucy-photos/_F8A0489-Edit.jpg"
             alt="Product showcase"
             fill
+            sizes="33vw"
             className="object-cover"
           />
         </div>

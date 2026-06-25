@@ -14,6 +14,7 @@ export function ContactPagePromo() {
             src="/lucy-photos/_F8A0317-Edit.jpg"
             alt="Contact Glamm Hair"
             fill
+            sizes="(max-width: 1280px) 100vw, 1280px"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
@@ -108,6 +109,7 @@ export function ContactPagePromo() {
               src="/lucy-photos/_F8A0346-Edit.jpg"
               alt="Hair Consultation"
               fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"
             />
           </div>

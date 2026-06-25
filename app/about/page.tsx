@@ -82,6 +82,7 @@ export default function AboutPage() {
                 src="/lucy-lomuro.jpg"
                 alt="Lucy Lomuro - Founder of Glamm Hair Extensions"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
                 priority
               />
@@ -172,6 +173,7 @@ export default function AboutPage() {
               src="/lucy-photos/_F8A0381-Edit.jpg"
               alt="Glamm Hair Extensions Quality"
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
             />
           </div>

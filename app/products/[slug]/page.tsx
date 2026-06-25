@@ -137,6 +137,7 @@ export default function ProductPage() {
                   src={gallery[selectedImage]}
                   alt={product.title}
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-700"
                   priority
                 />
@@ -165,7 +166,7 @@ export default function ProductPage() {
                       <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
                   ) : (
-                    <Image src={img} alt={`${product.title} view ${index + 1}`} fill className="object-cover" />
+                    <Image src={img} alt={`${product.title} view ${index + 1}`} fill sizes="(max-width: 1024px) 33vw, 16vw" className="object-cover" />
                   )}
                 </button>
               ))}
