@@ -268,14 +268,9 @@ export default function ProductForm({
 
         {/* Sizes & prices */}
         <div className="card p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="font-semibold">Sizes & Prices</h2>
-              <p className="text-xs text-text-muted">The price range shown on the site is taken from these.</p>
-            </div>
-            <button type="button" onClick={addRow} className="inline-flex items-center gap-1.5 text-sm text-accent font-medium">
-              <Plus className="h-4 w-4" /> Add size
-            </button>
+          <div className="mb-3">
+            <h2 className="font-semibold">Sizes & Prices</h2>
+            <p className="text-xs text-text-muted">The price range shown on the site is taken from these.</p>
           </div>
           <div className="space-y-2">
             {sizeRows.map((r, i) => (
@@ -308,6 +303,14 @@ export default function ProductForm({
               </div>
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={addRow}
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2.5 text-sm font-medium text-accent hover:bg-accent/5"
+          >
+            <Plus className="h-4 w-4" /> Add size
+          </button>
         </div>
 
         {/* Features & benefits */}

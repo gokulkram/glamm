@@ -476,8 +476,8 @@ export default function CheckoutPage() {
                 </div>
                 <input type="text" name="address1" placeholder="Address" value={customerInfo.address1} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                 <input type="text" name="address2" placeholder="Apartment, suite, etc. (optional)" value={customerInfo.address2} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" />
-                <div className="grid grid-cols-3 gap-4">
-                  <input type="text" name="city" placeholder="City" value={customerInfo.city} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <input type="text" name="city" placeholder="City" value={customerInfo.city} onChange={handleInputChange} className="col-span-2 sm:col-span-1 w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                   <input type="text" name="state" placeholder="State" value={customerInfo.state} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                   <input type="text" name="zip" placeholder="ZIP" value={customerInfo.zip} onChange={handleInputChange} className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent" required />
                 </div>

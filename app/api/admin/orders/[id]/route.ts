@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/supabase/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendShippingNotification } from '@/lib/email'
+import { sendShippingNotification, sendOrderStatusUpdate } from '@/lib/email'
 
 export const runtime = 'nodejs'
 
@@ -35,10 +35,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const sb = supabaseAdmin()
 
-  // Get the current order so we can detect a transition into "shipped"
+  // Get the current order so we can detect a status transition
   const { data: before } = await sb
     .from('orders')
-    .select('status, email, first_name, tracking_number, tracking_carrier')
+    .select('status, email, first_name, order_number, tracking_number, tracking_carrier')
     .eq('id', params.id)
     .maybeSingle()
   if (!before) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -61,18 +61,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Could not update order' }, { status: 500 })
   }
 
-  // Send a shipping email when the order first becomes "shipped"
-  let shippingEmailed = false
-  if (body.status === 'shipped' && before.status !== 'shipped') {
-    shippingEmailed = await sendShippingNotification({
-      orderNumber: (await sb.from('orders').select('order_number').eq('id', params.id).single()).data!
-        .order_number,
-      email: before.email,
-      firstName: before.first_name,
-      trackingNumber: data.tracking_number,
-      trackingCarrier: data.tracking_carrier,
-    })
+  // Notify the customer when the status actually changes. "shipped" gets the
+  // dedicated tracking email; processing/delivered/cancelled/refunded get a
+  // status-update email. pending/paid send nothing (covered elsewhere).
+  let customerEmailed = false
+  if (body.status && body.status !== before.status) {
+    if (body.status === 'shipped') {
+      customerEmailed = await sendShippingNotification({
+        orderNumber: before.order_number,
+        email: before.email,
+        firstName: before.first_name,
+        trackingNumber: data.tracking_number,
+        trackingCarrier: data.tracking_carrier,
+      })
+    } else {
+      customerEmailed = await sendOrderStatusUpdate({
+        orderNumber: before.order_number,
+        email: before.email,
+        firstName: before.first_name,
+        status: body.status,
+      })
+    }
   }
 
-  return NextResponse.json({ success: true, order: data, shippingEmailed })
+  return NextResponse.json({ success: true, order: data, shippingEmailed: customerEmailed, customerEmailed })
 }

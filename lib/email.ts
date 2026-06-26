@@ -258,3 +258,71 @@ export async function sendShippingNotification(data: ShippingData): Promise<bool
     return false
   }
 }
+
+type OrderStatusData = {
+  orderNumber: string
+  email: string
+  firstName?: string | null
+  status: string
+}
+
+// Customer-facing copy per order status. Statuses not listed here (pending,
+// paid, shipped) do not send via this function — "shipped" has its own email
+// with tracking, and pending/paid are covered by the order confirmation.
+const STATUS_COPY: Record<string, { subject: string; heading: string; message: string }> = {
+  processing: {
+    subject: 'is being prepared',
+    heading: 'Your order is being prepared 📦',
+    message: "Good news — we've started preparing your order. We'll email you again with tracking as soon as it ships.",
+  },
+  delivered: {
+    subject: 'has been delivered',
+    heading: 'Your order was delivered 🎉',
+    message: 'Your order has been marked as delivered. We hope you love your Glamm Hair! If anything isn’t right, just reply to this email.',
+  },
+  cancelled: {
+    subject: 'has been cancelled',
+    heading: 'Your order has been cancelled',
+    message: 'Your order has been cancelled. If this wasn’t expected or you have any questions, please contact our support team.',
+  },
+  refunded: {
+    subject: 'has been refunded',
+    heading: 'Your refund has been processed',
+    message: 'We’ve processed a refund for your order. It can take 5–10 business days to appear on your statement, depending on your bank.',
+  },
+}
+
+/** Notify the customer when an admin moves their order to a new status. */
+export async function sendOrderStatusUpdate(data: OrderStatusData): Promise<boolean> {
+  const copy = STATUS_COPY[data.status]
+  if (!copy) return false // no customer email for this status
+
+  const transport = getTransport()
+  if (!transport) {
+    console.warn('SMTP not configured — skipping status email')
+    return false
+  }
+
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:28px 24px;color:#fff;text-align:center;">
+      <div style="font-size:20px;font-weight:700;">${copy.heading}</div>
+      <div style="opacity:.8;margin-top:4px;">Order ${data.orderNumber}</div>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0;">Hi${data.firstName ? ` ${data.firstName}` : ''}, ${copy.message}</p>
+      <p style="color:#6B6B6B;font-size:13px;margin-top:24px;">You can view your order anytime from your account.</p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: FROM(),
+      to: data.email,
+      subject: `Your Glamm Hair order ${data.orderNumber} ${copy.subject}`,
+      html: shell('Order update', body),
+    })
+    return true
+  } catch (err) {
+    console.error('sendOrderStatusUpdate failed:', err)
+    return false
+  }
+}
