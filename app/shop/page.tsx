@@ -167,7 +167,7 @@ function ShopContent() {
 
           {/* Products Grid - Full Width */}
           {loading ? (
-            <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="aspect-square rounded-2xl bg-surface mb-3" />
@@ -177,7 +177,7 @@ function ShopContent() {
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

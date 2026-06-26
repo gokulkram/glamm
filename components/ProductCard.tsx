@@ -40,7 +40,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Link href={`/products/${product.slug}`} className="group cursor-pointer h-full flex flex-col relative">
+    <Link href={`/products/${product.slug}`} className="group cursor-pointer h-full flex flex-col relative min-w-0">
       {/* Outer Glow */}
       <div className="absolute -inset-4 bg-gradient-to-br from-accent/5 via-transparent to-accent-dark/5 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
 

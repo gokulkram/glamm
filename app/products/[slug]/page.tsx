@@ -134,7 +134,7 @@ export default function ProductPage() {
     <div className="min-h-screen py-16 bg-gradient-to-b from-background to-surface">
       <div className="container-max">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm mb-8 animate-fade-in-up">
+        <nav className="flex flex-wrap items-center gap-2 text-sm mb-8 animate-fade-in-up">
           <Link href="/" className="text-text-muted hover:text-accent transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4 text-text-muted" />
           <Link href="/shop" className="text-text-muted hover:text-accent transition-colors">Shop</Link>
