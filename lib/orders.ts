@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { sendOrderConfirmation } from '@/lib/email'
+import { sendOrderConfirmation, sendNewOrderNotification } from '@/lib/email'
 import { recordRedemption } from '@/lib/coupons'
 
 export type OrderCustomer = {
@@ -248,6 +248,26 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     discount: Number(discount || 0),
     total,
   }).catch((e) => console.error('Order email error:', e))
+
+  // Internal store alert (best-effort — never fail the order).
+  sendNewOrderNotification({
+    orderNumber: orderRow.order_number,
+    customerName: `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() || null,
+    email: customer.email,
+    phone: customer.phone,
+    items: items.map((it) => ({
+      title: it.title,
+      size: it.size,
+      quantity: it.quantity,
+      unit_price: Number(it.unit_price),
+    })),
+    subtotal,
+    shipping: Number(shipping || 0),
+    discount: Number(discount || 0),
+    total,
+    paymentMethod: payment?.method,
+    paymentStatus: payment?.status,
+  }).catch((e) => console.error('New-order notification error:', e))
 
   return { ok: true, orderNumber: orderRow.order_number, orderId: orderRow.id }
 }

@@ -16,6 +16,18 @@ function getTransport() {
 
 const FROM = () => process.env.SMTP_FROM || process.env.SMTP_USER || 'Glamm Hair'
 
+/**
+ * Recipients for internal store notifications. Uses ORDER_NOTIFY_EMAILS if set,
+ * otherwise falls back to ADMIN_EMAILS — so order alerts can go to a shared
+ * inbox without also granting admin-panel access.
+ */
+function notificationRecipients(): string[] {
+  return (process.env.ORDER_NOTIFY_EMAILS || process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 type EmailItem = { title: string; size?: string | null; quantity: number; unit_price: number }
 
 type OrderConfirmationData = {
@@ -105,6 +117,95 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
     return true
   } catch (err) {
     console.error('sendOrderConfirmation failed:', err)
+    return false
+  }
+}
+
+type NewOrderNotificationData = {
+  orderNumber: string
+  customerName?: string | null
+  email: string
+  phone?: string | null
+  items: EmailItem[]
+  subtotal: number
+  shipping: number
+  discount?: number
+  total: number
+  paymentMethod?: string | null
+  paymentStatus?: string | null
+}
+
+/** Internal alert to store staff when a new order is placed. */
+export async function sendNewOrderNotification(data: NewOrderNotificationData): Promise<boolean> {
+  const transport = getTransport()
+  if (!transport) {
+    console.warn('SMTP not configured — skipping new-order notification')
+    return false
+  }
+  const to = notificationRecipients()
+  if (to.length === 0) {
+    console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping new-order notification')
+    return false
+  }
+
+  const rows = data.items
+    .map(
+      (it) => `<tr>
+        <td style="padding:8px 0;border-bottom:1px solid #f0ece5;">
+          <div style="font-weight:600;">${it.title}</div>
+          <div style="color:#6B6B6B;font-size:13px;">${it.size ? `Size ${it.size} · ` : ''}Qty ${it.quantity}</div>
+        </td>
+        <td style="padding:8px 0;border-bottom:1px solid #f0ece5;text-align:right;white-space:nowrap;">${money(
+          it.unit_price * it.quantity,
+        )}</td>
+      </tr>`,
+    )
+    .join('')
+
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:24px;color:#fff;">
+      <div style="font-size:18px;font-weight:700;">🛒 New order received</div>
+      <div style="opacity:.8;margin-top:2px;">${data.orderNumber} · ${money(data.total)} · ${
+        data.paymentStatus ?? 'pending'
+      }${data.paymentMethod ? ` (${data.paymentMethod})` : ''}</div>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0 0 16px;font-size:14px;color:#2C2C2C;">
+        <b>Customer:</b> ${data.customerName || '—'}<br/>
+        <b>Email:</b> ${data.email}${data.phone ? `<br/><b>Phone:</b> ${data.phone}` : ''}
+      </p>
+      <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:14px;">
+        <tr><td style="padding:3px 0;color:#6B6B6B;">Subtotal</td><td style="padding:3px 0;text-align:right;">${money(
+          data.subtotal,
+        )}</td></tr>
+        <tr><td style="padding:3px 0;color:#6B6B6B;">Shipping</td><td style="padding:3px 0;text-align:right;">${
+          data.shipping ? money(data.shipping) : 'Free'
+        }</td></tr>
+        ${
+          data.discount && data.discount > 0
+            ? `<tr><td style="padding:3px 0;color:#2e7d32;">Discount</td><td style="padding:3px 0;text-align:right;color:#2e7d32;">−${money(
+                data.discount,
+              )}</td></tr>`
+            : ''
+        }
+        <tr><td style="padding:8px 0 0;font-weight:700;border-top:1px solid #EAE3D9;">Total</td><td style="padding:8px 0 0;text-align:right;font-weight:700;border-top:1px solid #EAE3D9;">${money(
+          data.total,
+        )}</td></tr>
+      </table>
+      <p style="color:#6B6B6B;font-size:13px;margin-top:20px;">Open the admin → Orders to process this order.</p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: FROM(),
+      to: to.join(','),
+      subject: `🛒 New order ${data.orderNumber} — ${money(data.total)}`,
+      html: shell('New order', body),
+    })
+    return true
+  } catch (err) {
+    console.error('sendNewOrderNotification failed:', err)
     return false
   }
 }
