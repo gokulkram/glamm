@@ -10,3 +10,7 @@ supabase/*_rows.csv
 
 # Browser-test artifacts
 .playwright-mcp/
+
+# Office temp / lock files
+~$*
+*.tmp
