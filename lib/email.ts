@@ -25,6 +25,7 @@ type OrderConfirmationData = {
   items: EmailItem[]
   subtotal: number
   shipping: number
+  discount?: number
   total: number
 }
 
@@ -80,6 +81,13 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
         <tr><td style="padding:3px 0;color:#6B6B6B;">Shipping</td><td style="padding:3px 0;text-align:right;">${
           data.shipping ? money(data.shipping) : 'Free'
         }</td></tr>
+        ${
+          data.discount && data.discount > 0
+            ? `<tr><td style="padding:3px 0;color:#2e7d32;">Discount</td><td style="padding:3px 0;text-align:right;color:#2e7d32;">−${money(
+                data.discount,
+              )}</td></tr>`
+            : ''
+        }
         <tr><td style="padding:8px 0 0;font-weight:700;border-top:1px solid #EAE3D9;">Total</td><td style="padding:8px 0 0;text-align:right;font-weight:700;border-top:1px solid #EAE3D9;">${money(
           data.total,
         )}</td></tr>

@@ -24,9 +24,23 @@ export async function createOrderFromPaymentIntent(
     return { ok: false, error: 'Invalid cart data on payment' }
   }
 
-  // Re-price from the database — never trust an amount carried on the client.
+  // Re-price the line items from the database (authoritative prices), but DON'T
+  // re-validate the coupon: the discount that was actually charged is stored in
+  // the PI metadata at apply-time. Re-validating could differ (code expired/used
+  // between apply and pay) and make the recorded total not match the money.
   const priced = await priceCart(cartInput)
   if ('error' in priced) return { ok: false, error: priced.error }
+
+  const couponCode = (m.code || '').trim().toUpperCase() || null
+  const discount = Math.max(0, Number(m.discount) || 0)
+  const total = Number((priced.cart.subtotal - discount + priced.cart.shipping).toFixed(2))
+
+  // Sanity check against what Stripe actually captured.
+  if (typeof pi.amount_received === 'number' && Math.abs(pi.amount_received - Math.round(total * 100)) > 1) {
+    console.warn(
+      `Order total mismatch for ${pi.id}: computed ${total} vs captured ${pi.amount_received / 100}`,
+    )
+  }
 
   const result = await createOrder({
     userId: m.userId || null,
@@ -52,7 +66,9 @@ export async function createOrderFromPaymentIntent(
     })),
     subtotal: priced.cart.subtotal,
     shipping: priced.cart.shipping,
-    total: priced.cart.total,
+    discount,
+    couponCode,
+    total,
     payment: { method: 'stripe', status: 'paid', transactionId: pi.id },
   })
 

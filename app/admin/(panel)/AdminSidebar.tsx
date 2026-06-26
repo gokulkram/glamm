@@ -10,6 +10,7 @@ import {
   Settings,
   Newspaper,
   Star,
+  Ticket,
   ExternalLink,
   LogOut,
 } from 'lucide-react'
@@ -19,6 +20,7 @@ const NAV = [
   { href: '/admin', label: 'Products', icon: Package },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/admin/discounts', label: 'Discounts', icon: Ticket },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/blog', label: 'Blog', icon: Newspaper },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },

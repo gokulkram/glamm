@@ -77,6 +77,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           <div className="px-5 py-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-text-muted">Subtotal</span><span>${order.subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="text-text-muted">Shipping</span><span>{order.shipping ? `$${order.shipping.toFixed(2)}` : 'Free'}</span></div>
+            {order.discount > 0 && (
+              <div className="flex justify-between text-green-700">
+                <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
+                <span>−${order.discount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border">
               <span>Total</span><span>${order.total.toFixed(2)} {order.currency}</span>
             </div>

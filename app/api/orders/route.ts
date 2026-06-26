@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createOrder, type OrderItem } from '@/lib/orders'
 import { computeShipping } from '@/lib/checkout/shipping'
 import { getShippingConfig } from '@/lib/settings'
+import { validateCoupon } from '@/lib/coupons'
 
 export const runtime = 'nodejs'
 
@@ -21,6 +22,7 @@ type IncomingOrder = {
   }
   items: OrderItem[]
   shipping?: number
+  couponCode?: string
   payment?: {
     method?: string
     status?: 'pending' | 'paid' | 'failed'
@@ -56,7 +58,20 @@ export async function POST(req: NextRequest) {
 
   const subtotal = items.reduce((sum, it) => sum + Number(it.unit_price) * Number(it.quantity), 0)
   const shippingCost = computeShipping(subtotal, await getShippingConfig())
-  const total = subtotal + shippingCost
+
+  // Validate the coupon server-side (never trust a client-sent discount amount).
+  let discount = 0
+  let couponCode: string | null = null
+  if (body.couponCode) {
+    const result = await validateCoupon(body.couponCode, subtotal, customer.email)
+    if (result.ok) {
+      discount = result.discount
+      couponCode = result.coupon.code
+    }
+    // Invalid codes are silently ignored on manual orders (order still places).
+  }
+
+  const total = Number((subtotal - discount + shippingCost).toFixed(2))
 
   const result = await createOrder({
     userId: user?.id ?? null,
@@ -64,6 +79,8 @@ export async function POST(req: NextRequest) {
     items,
     subtotal,
     shipping: shippingCost,
+    discount,
+    couponCode,
     total,
     payment: payment ?? { method: 'manual', status: 'pending' },
   })
@@ -77,6 +94,7 @@ export async function POST(req: NextRequest) {
     orderNumber: result.orderNumber,
     orderId: result.orderId,
     subtotal,
+    discount,
     total,
   })
 }

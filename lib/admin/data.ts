@@ -71,6 +71,8 @@ export type OrderDetail = {
   country: string | null
   subtotal: number
   shipping: number
+  discount: number
+  coupon_code: string | null
   total: number
   currency: string
   status: string
@@ -114,6 +116,8 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     country: data.country,
     subtotal: Number(data.subtotal),
     shipping: Number(data.shipping),
+    discount: Number(data.discount ?? 0),
+    coupon_code: data.coupon_code ?? null,
     total: Number(data.total),
     currency: data.currency,
     status: data.status,

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Package, Tags, ShoppingBag, Users, Settings } from 'lucide-react'
+import { Package, Tags, ShoppingBag, Users, Settings, Ticket } from 'lucide-react'
 import { getAdminUser } from '@/lib/supabase/admin-auth'
 import { getAdminProfile } from '@/lib/admin/data'
 import AdminSidebar from './AdminSidebar'
@@ -11,6 +11,7 @@ const MOBILE_NAV = [
   { href: '/admin', label: 'Products', icon: Package },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/admin/discounts', label: 'Discounts', icon: Ticket },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]

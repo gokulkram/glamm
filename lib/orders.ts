@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendOrderConfirmation } from '@/lib/email'
+import { recordRedemption } from '@/lib/coupons'
 
 export type OrderCustomer = {
   email: string
@@ -38,6 +39,8 @@ export type CreateOrderInput = {
   items: OrderItem[]
   subtotal: number
   shipping?: number
+  discount?: number
+  couponCode?: string | null
   total: number
   payment?: OrderPayment
 }
@@ -61,7 +64,17 @@ function generateOrderNumber() {
  * the same key is returned instead of creating a duplicate.
  */
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
-  const { userId = null, customer, items, subtotal, shipping = 0, total, payment } = input
+  const {
+    userId = null,
+    customer,
+    items,
+    subtotal,
+    shipping = 0,
+    discount = 0,
+    couponCode = null,
+    total,
+    payment,
+  } = input
 
   if (!customer?.email) return { ok: false, error: 'Customer email is required' }
   if (!Array.isArray(items) || items.length === 0) {
@@ -104,6 +117,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       country: customer.country ?? 'US',
       subtotal: subtotal.toFixed(2),
       shipping: Number(shipping || 0).toFixed(2),
+      discount: Number(discount || 0).toFixed(2),
+      coupon_code: couponCode || null,
       total: total.toFixed(2),
       status: payment?.status === 'paid' ? 'paid' : 'pending',
       payment_status: payment?.status ?? 'pending',
@@ -173,6 +188,17 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const { error: customerError } = await sb.from('customers').upsert(customerRow, { onConflict: 'email' })
   if (customerError) console.error('Customer upsert failed (non-fatal):', customerError)
 
+  // Record the coupon redemption on paid orders only (best-effort, idempotent).
+  // This runs only on a genuinely new order — the duplicate path returns earlier.
+  if (couponCode && payment?.status === 'paid') {
+    recordRedemption({
+      code: couponCode,
+      email: customer.email,
+      userId,
+      orderId: orderRow.id,
+    }).catch((e) => console.error('Coupon redemption record failed (non-fatal):', e))
+  }
+
   // Order confirmation email (best-effort — never fail the order).
   sendOrderConfirmation({
     orderNumber: orderRow.order_number,
@@ -186,6 +212,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     })),
     subtotal,
     shipping: Number(shipping || 0),
+    discount: Number(discount || 0),
     total,
   }).catch((e) => console.error('Order email error:', e))
 

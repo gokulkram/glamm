@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck } from 'lucide-react'
+import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck, Tag, X } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { computeShipping } from '@/lib/checkout/shipping'
@@ -128,10 +128,17 @@ export default function CheckoutPage() {
     zip: '',
   })
 
+  // Discount code state
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCode, setAppliedCode] = useState<string | null>(null)
+  const [discount, setDiscount] = useState(0)
+  const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+
   const shippingCfg = useShipping()
   const cartTotal = getCartTotal()
   const shipping = computeShipping(cartTotal, shippingCfg)
-  const orderTotal = Number((cartTotal + shipping).toFixed(2))
+  const orderTotal = Number(Math.max(0, cartTotal - discount + shipping).toFixed(2))
 
   // Create the Stripe PaymentIntent once the cart is known. If Stripe isn't
   // configured (or it errors), fall back to manual order placement.
@@ -226,6 +233,64 @@ export default function CheckoutPage() {
     setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value })
   }
 
+  // Apply a discount code. With a card PaymentIntent we update its amount
+  // server-side (authoritative); otherwise we preview against the cart.
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase()
+    if (!code) return
+    setCouponLoading(true)
+    setCouponMsg(null)
+    try {
+      const endpoint = paymentIntentId ? '/api/checkout/apply-coupon' : '/api/checkout/validate-coupon'
+      const payload = paymentIntentId
+        ? { paymentIntentId, code, email: customerInfo.email }
+        : {
+            items: cart.map((it) => ({ product_id: it.id, size: it.size, quantity: it.quantity })),
+            code,
+            email: customerInfo.email,
+          }
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.ok) {
+        setDiscount(Number(data.discount) || 0)
+        setAppliedCode(code)
+        setCouponMsg({ ok: true, text: data.message || `Code ${code} applied` })
+      } else {
+        setDiscount(0)
+        setAppliedCode(null)
+        setCouponMsg({ ok: false, text: data.message || "That code isn't valid" })
+      }
+    } catch {
+      setCouponMsg({ ok: false, text: 'Could not apply the code. Please try again.' })
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const removeCoupon = async () => {
+    setCouponLoading(true)
+    try {
+      if (paymentIntentId) {
+        await fetch('/api/checkout/apply-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentIntentId, code: '', email: customerInfo.email }),
+        })
+      }
+    } catch {
+      /* best-effort */
+    }
+    setDiscount(0)
+    setAppliedCode(null)
+    setCouponInput('')
+    setCouponMsg(null)
+    setCouponLoading(false)
+  }
+
   // Manual order placement (used when the card gateway isn't configured).
   // Saves a real order with payment_status "pending".
   const handlePlaceOrder = async () => {
@@ -253,6 +318,7 @@ export default function CheckoutPage() {
             quantity: it.quantity,
             unit_price: it.selectedPrice,
           })),
+          couponCode: appliedCode || undefined,
           payment: { method: 'manual', status: 'pending' },
         }),
       })
@@ -502,12 +568,56 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Discount code */}
+              <div className="border-t pt-4 mb-4">
+                {appliedCode ? (
+                  <div className="flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 text-sm font-medium text-green-800">
+                      <Tag className="h-4 w-4" /> {appliedCode}
+                    </span>
+                    <button
+                      onClick={removeCoupon}
+                      disabled={couponLoading}
+                      className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900"
+                    >
+                      <X className="h-3.5 w-3.5" /> Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), applyCoupon())}
+                      placeholder="Discount code"
+                      className="flex-1 px-3 py-2 border border-border rounded-lg text-sm uppercase outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                    <button
+                      onClick={applyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="btn btn-secondary px-4 disabled:opacity-50"
+                    >
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponMsg && (
+                  <p className={`mt-2 text-xs ${couponMsg.ok ? 'text-green-700' : 'text-red-600'}`}>{couponMsg.text}</p>
+                )}
+              </div>
+
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between"><span>Subtotal</span><span>${cartTotal.toFixed(2)}</span></div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>{shipping === 0 ? <span className="text-green-600">Free</span> : `$${shipping.toFixed(2)}`}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <span>Discount{appliedCode ? ` (${appliedCode})` : ''}</span>
+                    <span>−${discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Total</span>
                   <span>${orderTotal.toFixed(2)}</span>
