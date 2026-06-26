@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook, Twitter } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, Send, Loader2, Instagram, MessageCircle, Facebook, Twitter } from 'lucide-react'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -11,16 +11,34 @@ export default function ContactPage() {
     phone: '',
     subject: '',
     message: '',
+    company: '', // honeypot — must stay empty
   })
   const [submitted, setSubmitted] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => {
-      setSubmitted(false)
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
-    }, 3000)
+    setError(null)
+    setSending(true)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || 'Could not send your message. Please try again.')
+        return
+      }
+      setSubmitted(true)
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '', company: '' })
+    } catch {
+      setError('Could not send your message. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -132,9 +150,33 @@ export default function ContactPage() {
                   <label htmlFor="message" className="block text-sm font-semibold mb-2">Your Message *</label>
                   <textarea id="message" name="message" required value={formData.message} onChange={handleChange} rows={6} className="w-full px-4 py-3 rounded-xl border-2 border-border bg-white outline-none focus:border-accent transition-colors resize-none" placeholder="Tell us how we can help you..." />
                 </div>
-                <button type="submit" className="w-full btn btn-primary btn-lg flex items-center justify-center gap-2">
-                  <Send className="w-5 h-5" />
-                  Send Message
+                {/* Honeypot: hidden from real users, catches bots */}
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="hidden"
+                />
+                {error && (
+                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
+                )}
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="w-full btn btn-primary btn-lg flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {sending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Send Message
+                    </>
+                  )}
                 </button>
               </form>
             )}

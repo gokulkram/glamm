@@ -326,3 +326,58 @@ export async function sendOrderStatusUpdate(data: OrderStatusData): Promise<bool
     return false
   }
 }
+
+type ContactMessageData = {
+  name: string
+  email: string
+  phone?: string
+  subject?: string
+  message: string
+}
+
+/** Send a contact-form submission to store staff (Reply-To = the visitor). */
+export async function sendContactMessage(data: ContactMessageData): Promise<boolean> {
+  const transport = getTransport()
+  if (!transport) {
+    console.warn('SMTP not configured — skipping contact email')
+    return false
+  }
+  const to = notificationRecipients()
+  if (to.length === 0) {
+    console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping contact email')
+    return false
+  }
+
+  const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:24px;color:#fff;">
+      <div style="font-size:18px;font-weight:700;">✉️ New contact message</div>
+      ${data.subject ? `<div style="opacity:.8;margin-top:2px;">${esc(data.subject)}</div>` : ''}
+    </div>
+    <div style="padding:24px;font-size:14px;">
+      <p style="margin:0 0 12px;">
+        <b>From:</b> ${esc(data.name)}<br/>
+        <b>Email:</b> ${esc(data.email)}${data.phone ? `<br/><b>Phone:</b> ${esc(data.phone)}` : ''}
+      </p>
+      <div style="background:#FAF8F5;border:1px solid #EAE3D9;border-radius:12px;padding:16px;white-space:pre-wrap;">${esc(
+        data.message,
+      )}</div>
+      <p style="color:#6B6B6B;font-size:13px;margin-top:20px;">Reply directly to this email to respond to ${esc(
+        data.name,
+      )}.</p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: FROM(),
+      to: to.join(','),
+      replyTo: data.email,
+      subject: `Contact form: ${data.subject || 'New message'} — ${data.name}`,
+      html: shell('Contact message', body),
+    })
+    return true
+  } catch (err) {
+    console.error('sendContactMessage failed:', err)
+    return false
+  }
+}
