@@ -83,6 +83,7 @@ export default function ProductPage() {
   const selectedPrice = selectedSize && product.sizes_prices ? product.sizes_prices[selectedSize] : product.priceMin
 
   const handleAddToCart = () => {
+    if (!product.inStock) return
     if (!selectedSize) {
       alert('Please select a size')
       return
@@ -364,10 +365,11 @@ export default function ProductPage() {
             <div className="flex gap-4 mb-8">
               <button
                 onClick={handleAddToCart}
-                className="btn btn-primary btn-lg flex-1 flex items-center justify-center gap-3 text-lg"
+                disabled={!product.inStock}
+                className="btn btn-primary btn-lg flex-1 flex items-center justify-center gap-3 text-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <ShoppingCart className="w-6 h-6" />
-                Add to Cart
+                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
               </button>
               <button
                 onClick={handleWishlistToggle}
@@ -396,11 +398,18 @@ export default function ProductPage() {
               </div>
             </div>
 
-            {/* In Stock Badge */}
-            <div className="flex items-center gap-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="font-bold text-green-700">In Stock - Ready to Ship</span>
-            </div>
+            {/* Stock Badge */}
+            {product.inStock ? (
+              <div className="flex items-center gap-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-bold text-green-700">In Stock - Ready to Ship</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl">
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                <span className="font-bold text-gray-600">Out of Stock — currently unavailable</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Eye, Heart, Check, Ruler, ImageIcon } from 'lucide-react';
 import { Product } from '@/lib/data';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 interface ProductCardProps {
   product: Product;
@@ -14,6 +15,29 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const isPlaceholder = product.image.includes('placeholder');
+
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const inWishlist = isInWishlist(product.id);
+
+  // The whole card is a <Link>, so stop the click from navigating to the product.
+  const toggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (inWishlist) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist({
+        id: product.id,
+        title: product.title,
+        price: `$${product.priceMin} - $${product.priceMax}`,
+        priceMin: product.priceMin,
+        priceMax: product.priceMax,
+        image: product.image,
+        category: product.category,
+        slug: product.slug,
+      });
+    }
+  };
 
   return (
     <Link href={`/products/${product.slug}`} className="group cursor-pointer h-full flex flex-col relative">
@@ -75,10 +99,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               <Eye className="w-5 h-5" />
             </button>
             <button
-              className="w-14 h-14 rounded-xl backdrop-blur-md flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-2xl translate-y-4 group-hover:translate-y-0 border-2 bg-white/95 hover:bg-accent hover:text-white border-accent/20"
+              onClick={toggleWishlist}
+              aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+              className={`w-14 h-14 rounded-xl backdrop-blur-md flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-2xl translate-y-4 group-hover:translate-y-0 border-2 ${inWishlist ? 'bg-accent text-white border-accent' : 'bg-white/95 hover:bg-accent hover:text-white border-accent/20'}`}
               style={{ transitionDelay: '50ms' }}
             >
-              <Heart className="w-5 h-5" />
+              <Heart className={`w-5 h-5 ${inWishlist ? 'fill-current' : ''}`} />
             </button>
           </div>
 
@@ -95,9 +121,20 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Wishlist Button */}
-          <button className="absolute top-3 right-3 w-10 h-10 rounded-lg backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-lg z-20 border-2 bg-white/90 text-text hover:bg-accent hover:text-white border-white/50 hover:border-accent">
-            <Heart className="w-4 h-4" />
+          <button
+            onClick={toggleWishlist}
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            className={`absolute top-3 right-3 w-10 h-10 rounded-lg backdrop-blur-md flex items-center justify-center transition-all duration-300 shadow-lg z-20 border-2 ${inWishlist ? 'bg-accent text-white border-accent' : 'bg-white/90 text-text hover:bg-accent hover:text-white border-white/50 hover:border-accent'}`}
+          >
+            <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
           </button>
+
+          {/* Out of stock overlay */}
+          {!product.inStock && (
+            <div className="absolute inset-x-0 bottom-0 z-20 bg-gray-900/75 text-white text-center text-xs font-bold py-1.5 tracking-wide">
+              OUT OF STOCK
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -141,10 +178,16 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Tags Row */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <div className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
-              <Check className="w-3 h-3" />
-              <span>In Stock</span>
-            </div>
+            {product.inStock ? (
+              <div className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
+                <Check className="w-3 h-3" />
+                <span>In Stock</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1.5 rounded-lg border border-gray-200">
+                <span>Out of Stock</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 text-xs font-semibold text-accent bg-accent/10 px-2.5 py-1.5 rounded-lg border border-accent/20">
               <span>Free Ship</span>
             </div>
