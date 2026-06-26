@@ -49,6 +49,39 @@ export type CreateOrderResult =
   | { ok: true; orderNumber: string; orderId: string; duplicate?: boolean }
   | { ok: false; error: string }
 
+export type OrderSummary = {
+  orderNumber: string
+  subtotal: number
+  shipping: number
+  discount: number
+  couponCode: string | null
+  total: number
+  currency: string
+}
+
+/** Money summary for an order, by its human-friendly number (server-side use). */
+export async function getOrderSummary(orderNumber: string): Promise<OrderSummary | null> {
+  const sb = supabaseAdmin()
+  const { data, error } = await sb
+    .from('orders')
+    .select('order_number, subtotal, shipping, discount, coupon_code, total, currency')
+    .eq('order_number', orderNumber)
+    .maybeSingle()
+  if (error || !data) {
+    if (error) console.error('getOrderSummary failed:', error)
+    return null
+  }
+  return {
+    orderNumber: data.order_number,
+    subtotal: Number(data.subtotal),
+    shipping: Number(data.shipping),
+    discount: Number(data.discount ?? 0),
+    couponCode: data.coupon_code ?? null,
+    total: Number(data.total),
+    currency: data.currency,
+  }
+}
+
 // Human-friendly order number, e.g. GLM-8F3K2A1B
 function generateOrderNumber() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no ambiguous chars

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CheckCircle, Package, Mail, Home } from 'lucide-react'
 import { getStripe } from '@/lib/stripe'
 import { createOrderFromPaymentIntent } from '@/lib/checkout/stripeOrder'
+import { getOrderSummary } from '@/lib/orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,8 @@ export default async function OrderConfirmationPage({
     }
   }
 
+  const summary = orderNumber ? await getOrderSummary(orderNumber) : null
+
   return (
     <div className="section">
       <div className="container-max max-w-3xl">
@@ -46,6 +49,32 @@ export default async function OrderConfirmationPage({
             </p>
           )}
         </div>
+
+        {summary && (
+          <div className="card p-6 mb-8 max-w-md mx-auto">
+            <h2 className="text-lg font-bold mb-4">Order Summary</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Subtotal</span>
+                <span>${summary.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Shipping</span>
+                <span>{summary.shipping ? `$${summary.shipping.toFixed(2)}` : 'Free'}</span>
+              </div>
+              {summary.discount > 0 && (
+                <div className="flex justify-between text-green-700">
+                  <span>Discount{summary.couponCode ? ` (${summary.couponCode})` : ''}</span>
+                  <span>−${summary.discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
+                <span>Total</span>
+                <span>${summary.total.toFixed(2)} {summary.currency}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="card p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6">What's Next?</h2>
