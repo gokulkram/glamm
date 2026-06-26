@@ -10,6 +10,7 @@ export interface Product {
   sizes: string[]
   sizes_prices: Record<string, number>
   inStock: boolean
+  published: boolean
   badge?: string
   features: string[]
   benefits: string[]
@@ -42,6 +43,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"'],
     sizes_prices: {'10"': 108, '12"': 118, '14"': 128, '16"': 144, '18"': 150, '20"': 158, '22"': 170, '24"': 178},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -58,6 +60,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"'],
     sizes_prices: {'10"': 70, '12"': 76, '14"': 85, '16"': 90, '18"': 96, '20"': 110, '22"': 118, '24"': 128},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -74,6 +77,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"'],
     sizes_prices: {'10"': 78, '12"': 90, '14"': 98, '16"': 108, '18"': 118, '20"': 126, '22"': 138},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -90,6 +94,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"'],
     sizes_prices: {'10"': 70, '12"': 78, '14"': 84, '16"': 92, '18"': 98, '20"': 106},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -106,6 +111,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -121,6 +127,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -137,6 +144,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -153,6 +161,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'Best Seller',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -169,6 +178,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -185,6 +195,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -201,6 +212,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Perfect for braiding', 'Natural color', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -217,6 +229,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#4 Dark Brown', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -232,6 +245,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#6 Chestnut Brown', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -247,6 +261,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#8 Light Brown', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -262,6 +277,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#12 Golden Brown', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -277,6 +293,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#27 Honey Blonde', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -292,6 +309,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#30 Auburn', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -307,6 +325,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#60 Platinum Blonde', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -322,6 +341,7 @@ export const products: Product[] = [
     sizes: ['18"', '20"', '22"', '24"', '26"', '28"', '30"'],
     sizes_prices: {'18"': 110, '20"': 139, '22"': 146, '24"': 166, '26"': 174, '28"': 182, '30"': 194},
     inStock: true,
+    published: true,
     features: ['100% Virgin Human Hair', 'Perfect for braiding', '#613 Bleach Blonde', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
   },
@@ -337,6 +357,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -353,6 +374,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']
@@ -369,6 +391,7 @@ export const products: Product[] = [
     sizes: ['10"', '12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"', '32"'],
     sizes_prices: {'10"': 44, '12"': 48, '14"': 62, '16"': 74, '18"': 80, '20"': 83, '22"': 86, '24"': 112, '26"': 118, '28"': 120, '30"': 136, '32"': 145},
     inStock: true,
+    published: true,
     badge: 'New Arrival',
     features: ['100% Virgin Human Hair', 'Can be dyed and styled', 'Natural shine and softness', 'Tangle-free with proper care'],
     benefits: ['Long-lasting with proper care (6-12 months)', 'Heat-friendly up to 350°F', 'Minimal shedding', 'True to length']

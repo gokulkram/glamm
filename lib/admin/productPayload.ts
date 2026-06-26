@@ -6,12 +6,14 @@ export type ProductInput = {
   image?: string
   badge?: string
   inStock?: boolean
+  published?: boolean
   sizes?: string[]
   sizes_prices?: Record<string, number>
   features?: string[]
   benefits?: string[]
   priceMin?: number
   priceMax?: number
+  position?: number
 }
 
 export type ProductRow = {
@@ -25,6 +27,7 @@ export type ProductRow = {
   sizes: string[]
   sizes_prices: Record<string, number>
   in_stock: boolean
+  published: boolean
   badge: string | null
   features: string[]
   benefits: string[]
@@ -69,6 +72,7 @@ export function buildProductRow(
       sizes: input.sizes ?? [],
       sizes_prices: sizesPrices,
       in_stock: input.inStock ?? true,
+      published: input.published ?? true,
       badge: input.badge?.trim() || null,
       features: (input.features ?? []).filter((f) => f.trim()),
       benefits: (input.benefits ?? []).filter((b) => b.trim()),

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Pencil, Trash2, Loader2, Search } from 'lucide-react'
+import { Pencil, Trash2, Loader2, Search, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react'
 import type { Product, Category } from '@/lib/data'
 import Pagination from '@/components/admin/Pagination'
 
@@ -19,10 +19,23 @@ export default function ProductTable({
 }) {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [movingId, setMovingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
   const [page, setPage] = useState(1)
+
+  // Reordering acts on the full catalog order, so it only makes sense when the
+  // list isn't filtered down to a subset.
+  const isFiltered = search.trim() !== '' || category !== 'all'
+  const total = products.length
+
+  // Catalog position by id — `products` arrives in sort_order, so index + 1 is the rank.
+  const positionById = useMemo(() => {
+    const m = new Map<number, number>()
+    products.forEach((p, i) => m.set(p.id, i + 1))
+    return m
+  }, [products])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -62,6 +75,24 @@ export default function ProductTable({
     router.refresh()
   }
 
+  const handleMove = async (product: Product, direction: 'up' | 'down') => {
+    setError(null)
+    setMovingId(product.id)
+    const res = await fetch('/api/admin/products/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: product.id, direction }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Failed to reorder product')
+      setMovingId(null)
+      return
+    }
+    setMovingId(null)
+    router.refresh()
+  }
+
   return (
     <div className="card overflow-hidden">
       {/* Toolbar */}
@@ -97,23 +128,50 @@ export default function ProductTable({
         <table className="w-full text-sm">
           <thead className="bg-surface text-left text-text-muted">
             <tr>
+              <th className="px-4 py-3 font-medium w-12" title="Catalog position">#</th>
               <th className="px-4 py-3 font-medium">Product</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Price</th>
               <th className="px-4 py-3 font-medium">Stock</th>
+              <th className="px-4 py-3 font-medium">Visibility</th>
               <th className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {pageItems.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-text-muted">
+                <td colSpan={7} className="px-4 py-12 text-center text-text-muted">
                   No products match your filters.
                 </td>
               </tr>
             )}
             {pageItems.map((p) => (
               <tr key={p.id} className="hover:bg-surface/50">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="tabular-nums text-text-muted w-5 text-right">{positionById.get(p.id)}</span>
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => handleMove(p, 'up')}
+                        disabled={isFiltered || movingId !== null || positionById.get(p.id) === 1}
+                        title={isFiltered ? 'Clear search & category filter to reorder' : 'Move up'}
+                        aria-label="Move up"
+                        className="flex h-4 w-5 items-center justify-center rounded text-text-muted hover:bg-surface hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
+                      >
+                        {movingId === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                      </button>
+                      <button
+                        onClick={() => handleMove(p, 'down')}
+                        disabled={isFiltered || movingId !== null || positionById.get(p.id) === total}
+                        title={isFiltered ? 'Clear search & category filter to reorder' : 'Move down'}
+                        aria-label="Move down"
+                        className="flex h-4 w-5 items-center justify-center rounded text-text-muted hover:bg-surface hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-surface">
@@ -140,6 +198,17 @@ export default function ProductTable({
                   ) : (
                     <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
                       Out
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {p.published ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      <Eye className="h-3 w-3" /> Published
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <EyeOff className="h-3 w-3" /> Draft
                     </span>
                   )}
                 </td>

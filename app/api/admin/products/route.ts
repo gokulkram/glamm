@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/supabase/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { buildProductRow, type ProductInput } from '@/lib/admin/productPayload'
+import { repositionProduct } from '@/lib/admin/reposition'
 
 export const runtime = 'nodejs'
 
@@ -44,6 +45,16 @@ export async function POST(req: NextRequest) {
     }
     console.error('Create product failed:', insertError)
     return NextResponse.json({ error: 'Could not create product' }, { status: 500 })
+  }
+
+  // Insert appends to the end; move it into place if a position was provided.
+  if (Number.isFinite(input.position)) {
+    try {
+      await repositionProduct(sb, data.id, Number(input.position))
+    } catch (e) {
+      console.error('Reposition new product failed:', e)
+      // Non-fatal: the product exists, just at the end of the list.
+    }
   }
 
   return NextResponse.json({ success: true, id: data.id, slug: data.slug })

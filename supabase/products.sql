@@ -26,6 +26,7 @@ create table if not exists public.products (
   sizes         jsonb not null default '[]'::jsonb,        -- ["10\"","12\"", ...]
   sizes_prices  jsonb not null default '{}'::jsonb,        -- {"10\"":108, ...}
   in_stock      boolean not null default true,
+  published     boolean not null default true,  -- false = hidden from the public catalog
   badge         text,
   features      jsonb not null default '[]'::jsonb,
   benefits      jsonb not null default '[]'::jsonb,
@@ -34,8 +35,13 @@ create table if not exists public.products (
   updated_at    timestamptz not null default now()
 );
 
+-- Add the publish flag to catalogs created before this column existed.
+alter table public.products
+  add column if not exists published boolean not null default true;
+
 create index if not exists products_category_idx   on public.products (category);
 create index if not exists products_sort_order_idx  on public.products (sort_order);
+create index if not exists products_published_idx   on public.products (published);
 
 -- keep updated_at fresh (reuses the function from schema.sql if present)
 create or replace function public.set_updated_at()
@@ -59,10 +65,12 @@ create trigger products_set_updated_at
 alter table public.products   enable row level security;
 alter table public.categories enable row level security;
 
+-- Note: the app reads via the service_role key (bypasses RLS) and filters
+-- published in the query, so this policy is defense-in-depth for any anon read.
 drop policy if exists "public read products" on public.products;
 create policy "public read products"
   on public.products for select
-  using (true);
+  using (published = true);
 
 drop policy if exists "public read categories" on public.categories;
 create policy "public read categories"

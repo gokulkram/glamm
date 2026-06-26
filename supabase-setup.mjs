@@ -51,6 +51,7 @@ const schemaSQLBlocks = [
      sizes         jsonb not null default '[]'::jsonb,
      sizes_prices  jsonb not null default '{}'::jsonb,
      in_stock      boolean not null default true,
+     published     boolean not null default true,
      badge         text,
      features      jsonb not null default '[]'::jsonb,
      benefits      jsonb not null default '[]'::jsonb,

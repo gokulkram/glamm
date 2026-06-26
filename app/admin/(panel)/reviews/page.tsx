@@ -1,11 +1,11 @@
 import { getAllReviews } from '@/lib/reviews'
-import { getProducts } from '@/lib/products'
+import { getAllProducts } from '@/lib/products'
 import ReviewsTable from './ReviewsTable'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminReviewsPage() {
-  const [reviews, products] = await Promise.all([getAllReviews(), getProducts()])
+  const [reviews, products] = await Promise.all([getAllReviews(), getAllProducts()])
   const productTitles: Record<number, string> = {}
   for (const p of products) productTitles[p.id] = p.title
 

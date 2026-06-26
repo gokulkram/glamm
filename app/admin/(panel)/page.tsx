@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { Package, Tags, Plus } from 'lucide-react'
-import { getProducts, getCategories } from '@/lib/products'
+import { Package, Tags, Plus, Eye, EyeOff } from 'lucide-react'
+import { getAllProducts, getCategories } from '@/lib/products'
 import ProductTable from './ProductTable'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboard() {
-  const [products, categories] = await Promise.all([getProducts(), getCategories()])
+  const [products, categories] = await Promise.all([getAllProducts(), getCategories()])
 
   return (
     <div>
@@ -22,7 +22,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="card p-5 flex items-center gap-4">
           <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
             <Package className="h-5 w-5 text-accent" />
@@ -48,6 +48,19 @@ export default async function AdminDashboard() {
           <div>
             <div className="text-2xl font-bold">{products.filter((p) => p.inStock).length}</div>
             <div className="text-xs text-text-muted">In stock</div>
+          </div>
+        </div>
+        <div className="card p-5 flex items-center gap-4">
+          <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
+            {products.some((p) => !p.published) ? (
+              <EyeOff className="h-5 w-5 text-accent" />
+            ) : (
+              <Eye className="h-5 w-5 text-accent" />
+            )}
+          </div>
+          <div>
+            <div className="text-2xl font-bold">{products.filter((p) => p.published).length}</div>
+            <div className="text-xs text-text-muted">Published</div>
           </div>
         </div>
       </div>

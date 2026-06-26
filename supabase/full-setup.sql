@@ -35,6 +35,7 @@ create table if not exists public.products (
   sizes         jsonb not null default '[]'::jsonb,
   sizes_prices  jsonb not null default '{}'::jsonb,
   in_stock      boolean not null default true,
+  published     boolean not null default true,  -- false = hidden from the public catalog
   badge         text,
   features      jsonb not null default '[]'::jsonb,
   benefits      jsonb not null default '[]'::jsonb,
@@ -182,7 +183,7 @@ alter table public.admins      enable row level security;
 
 -- Products & categories: anyone (anon) can read
 drop policy if exists "public read products"   on public.products;
-create policy "public read products"   on public.products   for select using (true);
+create policy "public read products"   on public.products   for select using (published = true);
 
 drop policy if exists "public read categories" on public.categories;
 create policy "public read categories" on public.categories for select using (true);

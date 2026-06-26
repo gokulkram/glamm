@@ -14,6 +14,7 @@ type ProductRow = {
   sizes: string[] | null
   sizes_prices: Record<string, number> | null
   in_stock: boolean
+  published: boolean
   badge: string | null
   features: string[] | null
   benefits: string[] | null
@@ -33,6 +34,7 @@ function mapProduct(r: ProductRow): Product {
     sizes: r.sizes ?? [],
     sizes_prices: r.sizes_prices ?? {},
     inStock: r.in_stock,
+    published: r.published,
     badge: r.badge ?? undefined,
     features: r.features ?? [],
     benefits: r.benefits ?? [],
@@ -40,9 +42,27 @@ function mapProduct(r: ProductRow): Product {
 }
 
 const PRODUCT_COLUMNS =
-  'id, slug, title, description, category, price_min, price_max, image, sizes, sizes_prices, in_stock, badge, features, benefits'
+  'id, slug, title, description, category, price_min, price_max, image, sizes, sizes_prices, in_stock, published, badge, features, benefits'
 
+/** Published products only — for every public surface (home, shop, API, pricing). */
 export async function getProducts(): Promise<Product[]> {
+  const sb = supabaseAdmin()
+  const { data, error } = await sb
+    .from('products')
+    .select(PRODUCT_COLUMNS)
+    .eq('published', true)
+    .order('sort_order', { ascending: true })
+    .order('id', { ascending: true })
+
+  if (error) {
+    console.error('getProducts failed:', error)
+    return []
+  }
+  return (data as ProductRow[]).map(mapProduct)
+}
+
+/** All products, published or not — for the admin panel only. */
+export async function getAllProducts(): Promise<Product[]> {
   const sb = supabaseAdmin()
   const { data, error } = await sb
     .from('products')
@@ -51,7 +71,7 @@ export async function getProducts(): Promise<Product[]> {
     .order('id', { ascending: true })
 
   if (error) {
-    console.error('getProducts failed:', error)
+    console.error('getAllProducts failed:', error)
     return []
   }
   return (data as ProductRow[]).map(mapProduct)
@@ -63,6 +83,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .from('products')
     .select(PRODUCT_COLUMNS)
     .eq('slug', slug)
+    .eq('published', true)
     .maybeSingle()
 
   if (error) {

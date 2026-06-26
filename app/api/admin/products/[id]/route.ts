@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/supabase/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { buildProductRow, type ProductInput } from '@/lib/admin/productPayload'
+import { repositionProduct } from '@/lib/admin/reposition'
 
 export const runtime = 'nodejs'
 
@@ -43,6 +44,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (!data) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+  }
+
+  // Reposition in the catalog order if a position was provided.
+  if (Number.isFinite(input.position)) {
+    try {
+      await repositionProduct(sb, id, Number(input.position))
+    } catch (e) {
+      console.error('Reposition product failed:', e)
+      return NextResponse.json({ error: 'Saved, but could not change the position' }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ success: true, id: data.id })

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Loader2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react'
+import { Plus, Trash2, Loader2, ArrowLeft, Upload, Image as ImageIcon, Eye, EyeOff } from 'lucide-react'
 import type { Product, Category } from '@/lib/data'
 
 function slugify(s: string) {
@@ -19,9 +19,15 @@ type SizeRow = { size: string; price: string }
 export default function ProductForm({
   categories,
   initial,
+  position,
+  total = 0,
 }: {
   categories: Category[]
   initial?: Product
+  /** 1-based current rank in the catalog (edit only). */
+  position?: number
+  /** Total number of products, for the position hint and new-product default. */
+  total?: number
 }) {
   const router = useRouter()
   const isEdit = !!initial
@@ -34,6 +40,9 @@ export default function ProductForm({
   const [image, setImage] = useState(initial?.image ?? '')
   const [badge, setBadge] = useState(initial?.badge ?? '')
   const [inStock, setInStock] = useState(initial?.inStock ?? true)
+  const [published, setPublished] = useState(initial?.published ?? true)
+  // 1-based catalog position. New products default to the end of the list.
+  const [positionValue, setPositionValue] = useState(String(position ?? total + 1))
   const [sizeRows, setSizeRows] = useState<SizeRow[]>(
     initial && initial.sizes.length
       ? initial.sizes.map((s) => ({ size: s, price: String(initial.sizes_prices?.[s] ?? '') }))
@@ -97,6 +106,8 @@ export default function ProductForm({
       image,
       badge,
       inStock,
+      published,
+      position: Number(positionValue),
       sizes,
       sizes_prices,
       features: featuresText.split('\n').map((l) => l.trim()).filter(Boolean),
@@ -182,6 +193,22 @@ export default function ProductForm({
             </div>
           </div>
 
+          <div className="sm:max-w-xs">
+            <label className="block text-sm font-medium mb-1.5">Catalog position</label>
+            <input
+              className={field}
+              type="number"
+              min={1}
+              step={1}
+              value={positionValue}
+              onChange={(e) => setPositionValue(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-text-muted">
+              Order in the list — 1 = first{total ? `, ${total} = last` : ''}. Affects the storefront
+              and admin list (counts every product, including drafts).
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-1.5">Product image</label>
             <div className="flex items-start gap-4">
@@ -210,6 +237,33 @@ export default function ProductForm({
             <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} className="h-4 w-4 accent-[#f68961]" />
             In stock
           </label>
+        </div>
+
+        {/* Visibility */}
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-1">
+            {published ? <Eye className="h-4 w-4 text-accent" /> : <EyeOff className="h-4 w-4 text-text-muted" />}
+            <h2 className="font-semibold">Visibility</h2>
+          </div>
+          <p className="text-xs text-text-muted mb-4">
+            Unpublish to hide this product from the storefront without deleting it. Hidden
+            products can&apos;t be browsed or purchased, but all their details are kept and can be
+            re-published anytime.
+          </p>
+          <label className="inline-flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={published}
+              onChange={(e) => setPublished(e.target.checked)}
+              className="h-4 w-4 accent-[#f68961]"
+            />
+            <span className="text-sm font-medium">Published (visible on the site)</span>
+          </label>
+          {!published && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
+              <EyeOff className="h-3.5 w-3.5" /> Draft — this product is hidden from customers
+            </p>
+          )}
         </div>
 
         {/* Sizes & prices */}
