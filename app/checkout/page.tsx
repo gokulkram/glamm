@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import Script from 'next/script'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck, Tag, X } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
@@ -15,6 +16,23 @@ import type { Address } from '@/lib/account/data'
 
 const pubKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 const stripePromise = pubKey ? loadStripe(pubKey) : null
+
+const cloverPublicToken = process.env.NEXT_PUBLIC_CLOVER_PUBLIC_TOKEN
+const cloverMerchantId = process.env.NEXT_PUBLIC_CLOVER_MERCHANT_ID
+// Sandbox SDK — swap to https://checkout.clover.com/sdk.js for production.
+const CLOVER_SDK_URL = 'https://checkout.sandbox.dev.clover.com/sdk.js'
+
+type CloverElement = { mount: (selector: string) => void }
+type CloverInstance = {
+  elements: () => { create: (type: string, styles?: Record<string, unknown>) => CloverElement }
+  createToken: () => Promise<{ token?: string; errors?: Record<string, { error: string }> }>
+}
+
+declare global {
+  interface Window {
+    Clover?: new (publicToken: string, opts: { merchantId: string }) => CloverInstance
+  }
+}
 
 type CustomerInfo = Record<string, string>
 
@@ -105,6 +123,106 @@ function StripeCardForm({
   )
 }
 
+// Card form using Clover.js hosted iframe fields. Mirrors StripeCardForm:
+// tokenises the card client-side, then charges + finalises the order server-side.
+function CloverCardForm({
+  customerInfo,
+  items,
+  total,
+  isProcessing,
+  onError,
+  onProcessingChange,
+}: {
+  customerInfo: CustomerInfo
+  items: { product_id: number; size: string; quantity: number }[]
+  total: number
+  isProcessing: boolean
+  onError: (msg: string | null) => void
+  onProcessingChange: (v: boolean) => void
+}) {
+  const router = useRouter()
+  const { clearCart } = useCart()
+  const [sdkReady, setSdkReady] = useState(false)
+  const [elementsReady, setElementsReady] = useState(false)
+  const cloverRef = useRef<CloverInstance | null>(null)
+  const mountedRef = useRef(false)
+
+  useEffect(() => {
+    if (!sdkReady || mountedRef.current || !window.Clover || !cloverPublicToken || !cloverMerchantId) return
+    mountedRef.current = true
+    const clover = new window.Clover(cloverPublicToken, { merchantId: cloverMerchantId })
+    cloverRef.current = clover
+    const elements = clover.elements()
+    const styles = { input: { fontSize: '16px' } }
+    elements.create('CARD_NUMBER', styles).mount('#clover-card-number')
+    elements.create('CARD_DATE', styles).mount('#clover-card-date')
+    elements.create('CARD_CVV', styles).mount('#clover-card-cvv')
+    elements.create('CARD_POSTAL_CODE', styles).mount('#clover-card-postal')
+    setElementsReady(true)
+  }, [sdkReady])
+
+  const pay = async () => {
+    const required = ['email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip']
+    if (required.some((f) => !customerInfo[f]?.trim())) {
+      onError('Please fill in all required fields before paying.')
+      return
+    }
+    if (!cloverRef.current) {
+      onError('Card payment is still loading. Please wait a moment and try again.')
+      return
+    }
+    onError(null)
+    onProcessingChange(true)
+
+    const result = await cloverRef.current.createToken()
+    if (result.errors || !result.token) {
+      const first = result.errors ? Object.values(result.errors)[0] : null
+      onError(first?.error || 'Please check your card details and try again.')
+      onProcessingChange(false)
+      return
+    }
+
+    const res = await fetch('/api/clover/charge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: result.token, customer: customerInfo, items }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.success) {
+      onError(data.error || 'Your card was declined. Please try another card.')
+      onProcessingChange(false)
+      return
+    }
+    clearCart()
+    router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`)
+  }
+
+  if (!cloverPublicToken || !cloverMerchantId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+        Card payments via Clover are not available right now.
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4">
+      <Script src={CLOVER_SDK_URL} strategy="afterInteractive" onLoad={() => setSdkReady(true)} />
+      <div className="grid gap-3">
+        <div id="clover-card-number" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+        <div className="grid grid-cols-3 gap-3">
+          <div id="clover-card-date" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+          <div id="clover-card-cvv" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+          <div id="clover-card-postal" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+        </div>
+      </div>
+      <button onClick={pay} disabled={!elementsReady || isProcessing} className="btn btn-primary w-full mt-5">
+        {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : `Pay $${total.toFixed(2)}`}
+      </button>
+    </div>
+  )
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { cart, getCartTotal, clearCart } = useCart()
@@ -114,6 +232,8 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'clover'>('stripe')
+  const cloverAvailable = Boolean(cloverPublicToken && cloverMerchantId)
 
   // Customer info state
   const [customerInfo, setCustomerInfo] = useState({
@@ -503,21 +623,55 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {cardAvailable && clientSecret && stripePromise ? (
+              {(cardAvailable && clientSecret && stripePromise) || cloverAvailable ? (
                 <>
-                  <Elements
-                    stripe={stripePromise}
-                    options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#f68961' } } }}
-                  >
-                    <StripeCardForm
+                  {cardAvailable && (
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('stripe')}
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                          paymentMethod === 'stripe' ? 'border-accent bg-accent/5 text-accent' : 'border-border text-text-muted'
+                        }`}
+                      >
+                        Card (Stripe)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('clover')}
+                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                          paymentMethod === 'clover' ? 'border-accent bg-accent/5 text-accent' : 'border-border text-text-muted'
+                        }`}
+                      >
+                        Card (Clover)
+                      </button>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'stripe' && cardAvailable && clientSecret && stripePromise ? (
+                    <Elements
+                      stripe={stripePromise}
+                      options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#f68961' } } }}
+                    >
+                      <StripeCardForm
+                        customerInfo={customerInfo}
+                        total={orderTotal}
+                        paymentIntentId={paymentIntentId!}
+                        isProcessing={isProcessing}
+                        onError={setError}
+                        onProcessingChange={setIsProcessing}
+                      />
+                    </Elements>
+                  ) : (
+                    <CloverCardForm
                       customerInfo={customerInfo}
+                      items={cart.map((it) => ({ product_id: it.id, size: it.size, quantity: it.quantity }))}
                       total={orderTotal}
-                      paymentIntentId={paymentIntentId!}
                       isProcessing={isProcessing}
                       onError={setError}
                       onProcessingChange={setIsProcessing}
                     />
-                  </Elements>
+                  )}
                 </>
               ) : (
                 <>
