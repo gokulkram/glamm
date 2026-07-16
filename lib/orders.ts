@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto'
+import { waitUntil } from '@vercel/functions'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { sendOrderConfirmation, sendNewOrderNotification } from '@/lib/email'
 import { recordRedemption } from '@/lib/coupons'
@@ -221,53 +222,69 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const { error: customerError } = await sb.from('customers').upsert(customerRow, { onConflict: 'email' })
   if (customerError) console.error('Customer upsert failed (non-fatal):', customerError)
 
+  // Post-response work (emails, coupon redemption) is best-effort — it must
+  // never fail the order, but it also must not be plain fire-and-forget. On
+  // Vercel the serverless function is frozen the moment the HTTP response is
+  // returned, which kills any promise still in flight (the SMTP handshake to
+  // Gmail takes ~4s). `waitUntil` keeps the function alive until these settle
+  // WITHOUT blocking the response — so checkout stays fast and never risks the
+  // function timeout after the card has already been charged. Off Vercel (local
+  // dev) `waitUntil` is a harmless no-op and the promise completes normally
+  // because the dev process stays alive.
+
   // Record the coupon redemption on paid orders only (best-effort, idempotent).
   // This runs only on a genuinely new order — the duplicate path returns earlier.
   if (couponCode && payment?.status === 'paid') {
-    recordRedemption({
-      code: couponCode,
-      email: customer.email,
-      userId,
-      orderId: orderRow.id,
-    }).catch((e) => console.error('Coupon redemption record failed (non-fatal):', e))
+    waitUntil(
+      recordRedemption({
+        code: couponCode,
+        email: customer.email,
+        userId,
+        orderId: orderRow.id,
+      }).catch((e) => console.error('Coupon redemption record failed (non-fatal):', e)),
+    )
   }
 
-  // Order confirmation email (best-effort — never fail the order).
-  sendOrderConfirmation({
-    orderNumber: orderRow.order_number,
-    email: customer.email,
-    firstName: customer.firstName,
-    items: items.map((it) => ({
-      title: it.title,
-      size: it.size,
-      quantity: it.quantity,
-      unit_price: Number(it.unit_price),
-    })),
-    subtotal,
-    shipping: Number(shipping || 0),
-    discount: Number(discount || 0),
-    total,
-  }).catch((e) => console.error('Order email error:', e))
+  // Order confirmation email.
+  waitUntil(
+    sendOrderConfirmation({
+      orderNumber: orderRow.order_number,
+      email: customer.email,
+      firstName: customer.firstName,
+      items: items.map((it) => ({
+        title: it.title,
+        size: it.size,
+        quantity: it.quantity,
+        unit_price: Number(it.unit_price),
+      })),
+      subtotal,
+      shipping: Number(shipping || 0),
+      discount: Number(discount || 0),
+      total,
+    }).catch((e) => console.error('Order email error:', e)),
+  )
 
-  // Internal store alert (best-effort — never fail the order).
-  sendNewOrderNotification({
-    orderNumber: orderRow.order_number,
-    customerName: `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() || null,
-    email: customer.email,
-    phone: customer.phone,
-    items: items.map((it) => ({
-      title: it.title,
-      size: it.size,
-      quantity: it.quantity,
-      unit_price: Number(it.unit_price),
-    })),
-    subtotal,
-    shipping: Number(shipping || 0),
-    discount: Number(discount || 0),
-    total,
-    paymentMethod: payment?.method,
-    paymentStatus: payment?.status,
-  }).catch((e) => console.error('New-order notification error:', e))
+  // Internal store alert.
+  waitUntil(
+    sendNewOrderNotification({
+      orderNumber: orderRow.order_number,
+      customerName: `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() || null,
+      email: customer.email,
+      phone: customer.phone,
+      items: items.map((it) => ({
+        title: it.title,
+        size: it.size,
+        quantity: it.quantity,
+        unit_price: Number(it.unit_price),
+      })),
+      subtotal,
+      shipping: Number(shipping || 0),
+      discount: Number(discount || 0),
+      total,
+      paymentMethod: payment?.method,
+      paymentStatus: payment?.status,
+    }).catch((e) => console.error('New-order notification error:', e)),
+  )
 
   return { ok: true, orderNumber: orderRow.order_number, orderId: orderRow.id }
 }
