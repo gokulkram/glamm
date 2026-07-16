@@ -129,11 +129,13 @@ export default function ProductPage() {
     .map((id) => allProducts.find((p) => p.id === id))
     .filter((p): p is Product => !!p && p.id !== product.id)
 
+  // Max related products shown in the "You May Also Like" row (fills 2 rows of 4).
+  const RELATED_LIMIT = 8
   const relatedProducts = (
     curatedRelated.length
       ? curatedRelated
       : allProducts.filter((p) => p.category === product.category && p.id !== product.id)
-  ).slice(0, 4)
+  ).slice(0, RELATED_LIMIT)
 
   // Create gallery array (use product image 3 times for demo)
   const gallery = [product.image, product.image, product.image]
