@@ -14,6 +14,7 @@ export type ProductInput = {
   priceMin?: number
   priceMax?: number
   position?: number
+  relatedIds?: number[]
 }
 
 export type ProductRow = {
@@ -31,6 +32,7 @@ export type ProductRow = {
   badge: string | null
   features: string[]
   benefits: string[]
+  related_ids: number[]
 }
 
 /**
@@ -76,6 +78,10 @@ export function buildProductRow(
       badge: input.badge?.trim() || null,
       features: (input.features ?? []).filter((f) => f.trim()),
       benefits: (input.benefits ?? []).filter((b) => b.trim()),
+      // De-duplicate, keep only valid integer ids, preserve chosen order.
+      related_ids: Array.from(
+        new Set((input.relatedIds ?? []).map(Number).filter((n) => Number.isInteger(n))),
+      ),
     },
   }
 }

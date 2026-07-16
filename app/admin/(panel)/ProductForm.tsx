@@ -21,6 +21,7 @@ export default function ProductForm({
   initial,
   position,
   total = 0,
+  allProducts = [],
 }: {
   categories: Category[]
   initial?: Product
@@ -28,6 +29,8 @@ export default function ProductForm({
   position?: number
   /** Total number of products, for the position hint and new-product default. */
   total?: number
+  /** Full catalog, used to pick "related products". */
+  allProducts?: Product[]
 }) {
   const router = useRouter()
   const isEdit = !!initial
@@ -50,6 +53,9 @@ export default function ProductForm({
   )
   const [featuresText, setFeaturesText] = useState((initial?.features ?? []).join('\n'))
   const [benefitsText, setBenefitsText] = useState((initial?.benefits ?? []).join('\n'))
+  // Admin-curated related products (ordered by pick order). Empty = auto by category on the storefront.
+  const [relatedIds, setRelatedIds] = useState<number[]>(initial?.relatedIds ?? [])
+  const [relatedQuery, setRelatedQuery] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,6 +90,9 @@ export default function ProductForm({
   const addRow = () => setSizeRows((rows) => [...rows, { size: '', price: '' }])
   const removeRow = (i: number) => setSizeRows((rows) => rows.filter((_, idx) => idx !== i))
 
+  const toggleRelated = (id: number) =>
+    setRelatedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -112,6 +121,7 @@ export default function ProductForm({
       sizes_prices,
       features: featuresText.split('\n').map((l) => l.trim()).filter(Boolean),
       benefits: benefitsText.split('\n').map((l) => l.trim()).filter(Boolean),
+      relatedIds,
     }
 
     setSaving(true)
@@ -134,6 +144,19 @@ export default function ProductForm({
   }
 
   const field = 'w-full px-3 py-2 rounded-lg border border-border bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/30'
+
+  // Related-products picker data: every other product, plus the current
+  // selection (in pick order) and the search-filtered pool.
+  const relatedPool = allProducts.filter((p) => p.id !== initial?.id)
+  const selectedProducts = relatedIds
+    .map((id) => relatedPool.find((p) => p.id === id))
+    .filter((p): p is Product => !!p)
+  const relatedSearch = relatedQuery.trim().toLowerCase()
+  const relatedMatches = relatedSearch
+    ? relatedPool.filter(
+        (p) => p.title.toLowerCase().includes(relatedSearch) || p.category.toLowerCase().includes(relatedSearch),
+      )
+    : relatedPool
 
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl">
@@ -323,6 +346,80 @@ export default function ProductForm({
             <label className="block text-sm font-medium mb-1.5">Benefits</label>
             <textarea className={field} rows={5} value={benefitsText} onChange={(e) => setBenefitsText(e.target.value)} placeholder="One per line" />
           </div>
+        </div>
+
+        {/* Related products */}
+        <div className="card p-6">
+          <div className="mb-3">
+            <h2 className="font-semibold">Related products</h2>
+            <p className="text-xs text-text-muted">
+              Shown in the &ldquo;You May Also Like&rdquo; row on this product&rsquo;s page, in the order you pick them.
+              Leave empty to auto-show other products from the same category.
+            </p>
+          </div>
+
+          {relatedPool.length === 0 ? (
+            <p className="text-sm text-text-muted">Add more products first — there&rsquo;s nothing to relate to yet.</p>
+          ) : (
+            <>
+              {/* Selected, in order */}
+              {selectedProducts.length > 0 ? (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {selectedProducts.map((p, i) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 py-1 pl-3 pr-1.5 text-sm font-medium text-accent"
+                    >
+                      <span className="text-accent/60">{i + 1}.</span>
+                      {p.title}
+                      <button
+                        type="button"
+                        onClick={() => toggleRelated(p.id)}
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/20"
+                        aria-label={`Remove ${p.title}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mb-4 text-sm text-text-muted">None selected — the storefront will fall back to same-category products.</p>
+              )}
+
+              {/* Search + pick list */}
+              <input
+                className={`${field} mb-2`}
+                value={relatedQuery}
+                onChange={(e) => setRelatedQuery(e.target.value)}
+                placeholder="Search products to add…"
+              />
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-border divide-y divide-border">
+                {relatedMatches.length === 0 ? (
+                  <p className="px-3 py-4 text-sm text-text-muted">No products match &ldquo;{relatedQuery}&rdquo;.</p>
+                ) : (
+                  relatedMatches.map((p) => {
+                    const checked = relatedIds.includes(p.id)
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-surface"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleRelated(p.id)}
+                          className="h-4 w-4 accent-[#f68961]"
+                        />
+                        <span className="font-medium">{p.title}</span>
+                        <span className="ml-auto text-xs text-text-muted">{p.category}</span>
+                      </label>
+                    )
+                  })
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

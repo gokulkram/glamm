@@ -122,9 +122,18 @@ export default function ProductPage() {
     }
   }
 
-  const relatedProducts = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4)
+  // Related products: use the admin-curated list (in the chosen order) when set;
+  // otherwise fall back to other products in the same category. Curated ids that
+  // are unpublished/missing are dropped because allProducts holds published only.
+  const curatedRelated = (product.relatedIds ?? [])
+    .map((id) => allProducts.find((p) => p.id === id))
+    .filter((p): p is Product => !!p && p.id !== product.id)
+
+  const relatedProducts = (
+    curatedRelated.length
+      ? curatedRelated
+      : allProducts.filter((p) => p.category === product.category && p.id !== product.id)
+  ).slice(0, 4)
 
   // Create gallery array (use product image 3 times for demo)
   const gallery = [product.image, product.image, product.image]

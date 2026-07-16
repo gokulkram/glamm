@@ -14,6 +14,8 @@ export interface Product {
   badge?: string
   features: string[]
   benefits: string[]
+  /** Admin-curated related product ids (in display order). Empty = fall back to same-category. */
+  relatedIds?: number[]
 }
 
 export interface Category {

@@ -18,6 +18,7 @@ type ProductRow = {
   badge: string | null
   features: string[] | null
   benefits: string[] | null
+  related_ids: number[] | null
 }
 
 // Map a DB row to the camelCase `Product` shape used across the UI.
@@ -38,11 +39,12 @@ function mapProduct(r: ProductRow): Product {
     badge: r.badge ?? undefined,
     features: r.features ?? [],
     benefits: r.benefits ?? [],
+    relatedIds: r.related_ids ?? [],
   }
 }
 
 const PRODUCT_COLUMNS =
-  'id, slug, title, description, category, price_min, price_max, image, sizes, sizes_prices, in_stock, published, badge, features, benefits'
+  'id, slug, title, description, category, price_min, price_max, image, sizes, sizes_prices, in_stock, published, badge, features, benefits, related_ids'
 
 /** Published products only — for every public surface (home, shop, API, pricing). */
 export async function getProducts(): Promise<Product[]> {

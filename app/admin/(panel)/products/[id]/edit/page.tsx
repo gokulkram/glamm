@@ -19,6 +19,7 @@ export default async function EditProductPage({ params }: { params: { id: string
       initial={products[index]}
       position={index + 1}
       total={products.length}
+      allProducts={products}
     />
   )
 }
