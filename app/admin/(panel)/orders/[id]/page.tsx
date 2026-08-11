@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, MapPin, User, CreditCard } from 'lucide-react'
+import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink } from 'lucide-react'
 import { getOrderDetail } from '@/lib/admin/data'
+import { EmailLink, PhoneLink, paymentLabel } from '@/components/admin/ContactLinks'
 import OrderManager from './OrderManager'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +25,22 @@ function Badge({ value }: { value: string }) {
       {value}
     </span>
   )
+}
+
+/** One label/value line in the Payment and Fulfilment cards. */
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-text-muted shrink-0">{label}</dt>
+      <dd className="text-right min-w-0">{children}</dd>
+    </div>
+  )
+}
+
+function fullDate(iso: string) {
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
 }
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
@@ -65,7 +82,17 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   {it.image && <Image src={it.image} alt={it.title} fill className="object-cover" unoptimized />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{it.title}</div>
+                  {it.slug ? (
+                    <Link
+                      href={`/products/${it.slug}`}
+                      target="_blank"
+                      className="font-medium truncate hover:text-accent hover:underline underline-offset-2 block"
+                    >
+                      {it.title}
+                    </Link>
+                  ) : (
+                    <div className="font-medium truncate">{it.title}</div>
+                  )}
                   <div className="text-xs text-text-muted">
                     {it.size ? `Size ${it.size} · ` : ''}Qty {it.quantity} × ${it.unit_price.toFixed(2)}
                   </div>
@@ -101,10 +128,25 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
           <div className="card p-5">
             <div className="flex items-center gap-2 font-semibold mb-3"><User className="h-4 w-4 text-accent" /> Customer</div>
-            <div className="text-sm space-y-1">
-              <div className="font-medium">{customerName}</div>
-              <div className="text-text-muted">{order.email}</div>
-              {order.phone && <div className="text-text-muted">{order.phone}</div>}
+            <div className="text-sm space-y-1.5">
+              {order.customerId ? (
+                <Link
+                  href={`/admin/customers/${order.customerId}`}
+                  className="inline-flex items-center gap-1.5 font-medium hover:text-accent hover:underline underline-offset-2"
+                >
+                  {customerName}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <div className="font-medium">{customerName}</div>
+              )}
+              <div><EmailLink email={order.email} /></div>
+              {order.phone && <div><PhoneLink phone={order.phone} /></div>}
+              {!order.customerId && (
+                <p className="text-xs text-text-muted pt-1">
+                  No customer record matches this email.
+                </p>
+              )}
             </div>
           </div>
 
@@ -126,16 +168,47 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
           <div className="card p-5">
             <div className="flex items-center gap-2 font-semibold mb-3"><CreditCard className="h-4 w-4 text-accent" /> Payment</div>
-            <div className="text-sm space-y-1.5">
-              <div className="flex justify-between"><span className="text-text-muted">Method</span><span className="capitalize">{order.payment_method ?? '—'}</span></div>
-              <div className="flex justify-between items-center"><span className="text-text-muted">Status</span><Badge value={order.payment_status} /></div>
+            <dl className="text-sm space-y-1.5">
+              <Row label="Method">{paymentLabel(order.payment_method)}</Row>
+              <Row label="Status"><Badge value={order.payment_status} /></Row>
+              <Row label="Amount">
+                <span className="font-medium">${order.total.toFixed(2)} {order.currency}</span>
+              </Row>
               {order.transaction_id && (
-                <div className="flex justify-between"><span className="text-text-muted">Txn</span><span className="font-mono text-xs">{order.transaction_id}</span></div>
+                <Row label="Transaction">
+                  <span className="font-mono text-xs break-all">{order.transaction_id}</span>
+                </Row>
               )}
-              {order.tracking_number && (
-                <div className="flex justify-between"><span className="text-text-muted">Tracking</span><span>{order.tracking_number}</span></div>
+              {order.auth_code && (
+                <Row label="Auth code">
+                  <span className="font-mono text-xs">{order.auth_code}</span>
+                </Row>
               )}
-            </div>
+              {order.coupon_code && <Row label="Coupon">{order.coupon_code}</Row>}
+              <Row label="Placed">
+                <span className="text-right">{fullDate(order.created_at)}</span>
+              </Row>
+              {order.updated_at && order.updated_at !== order.created_at && (
+                <Row label="Updated">
+                  <span className="text-right">{fullDate(order.updated_at)}</span>
+                </Row>
+              )}
+            </dl>
+          </div>
+
+          <div className="card p-5">
+            <div className="flex items-center gap-2 font-semibold mb-3"><Truck className="h-4 w-4 text-accent" /> Fulfilment</div>
+            <dl className="text-sm space-y-1.5">
+              <Row label="Status"><Badge value={order.status} /></Row>
+              <Row label="Carrier">{order.tracking_carrier || '—'}</Row>
+              <Row label="Tracking">
+                {order.tracking_number ? (
+                  <span className="font-mono text-xs break-all">{order.tracking_number}</span>
+                ) : (
+                  <span className="text-text-muted">Not shipped yet</span>
+                )}
+              </Row>
+            </dl>
           </div>
         </div>
       </div>
