@@ -115,6 +115,13 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     return { ok: false, error: 'Order must contain at least one item' }
   }
 
+  // Normalise once, here, and use it for every write below. `customers.email`
+  // is uniquely indexed case-sensitively, so "Bob@x.com" at checkout and
+  // "bob@x.com" at registration would become two customer rows that
+  // onConflict: 'email' can't merge — and admin lookups, which match with
+  // ilike, would then find both. The account routes already lowercase.
+  const email = customer.email.trim().toLowerCase()
+
   const sb = supabaseAdmin()
 
   // Idempotency: a gateway transaction id (e.g. Stripe PaymentIntent) uniquely
@@ -139,7 +146,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     const orderInsert: Record<string, unknown> = {
       order_number,
       user_id: userId ?? null,
-      email: customer.email,
+      email,
       phone: customer.phone ?? null,
       first_name: customer.firstName ?? null,
       last_name: customer.lastName ?? null,
@@ -214,7 +221,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   }
 
   // Upsert the customer profile (best-effort — never fail the order on this).
-  const customerRow: Record<string, string> = { email: customer.email }
+  const customerRow: Record<string, string> = { email }
   if (customer.firstName) customerRow.first_name = customer.firstName
   if (customer.lastName) customerRow.last_name = customer.lastName
   if (customer.phone) customerRow.phone = customer.phone
@@ -238,7 +245,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     waitUntil(
       recordRedemption({
         code: couponCode,
-        email: customer.email,
+        email,
         userId,
         orderId: orderRow.id,
       }).catch((e) => console.error('Coupon redemption record failed (non-fatal):', e)),
@@ -249,7 +256,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   waitUntil(
     sendOrderConfirmation({
       orderNumber: orderRow.order_number,
-      email: customer.email,
+      email,
       firstName: customer.firstName,
       items: items.map((it) => ({
         title: it.title,
@@ -269,7 +276,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     sendNewOrderNotification({
       orderNumber: orderRow.order_number,
       customerName: `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim() || null,
-      email: customer.email,
+      email,
       phone: customer.phone,
       items: items.map((it) => ({
         title: it.title,
