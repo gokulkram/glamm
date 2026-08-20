@@ -105,3 +105,20 @@ export function parseContentBlocks(raw: string): ContentBlock[] {
   flushList()
   return blocks
 }
+
+/**
+ * The wording above the homepage testimonial carousel. Editable from
+ * Admin → Testimonials.
+ *
+ * The rating badge underneath it isn't in here: it is the average and the
+ * count of the stars on the visible testimonials, so it can't be typed in.
+ */
+export type TestimonialsSection = {
+  eyebrow: string
+  heading: string
+}
+
+export const DEFAULT_TESTIMONIALS_SECTION: TestimonialsSection = {
+  eyebrow: 'Real Reviews. Real Results.',
+  heading: 'What Our Customers Say',
+}

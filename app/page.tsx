@@ -5,7 +5,8 @@ import Hero from '@/components/Hero'
 import ProductCard from '@/components/ProductCard'
 import { LucyGallery } from '@/components/LucyGallery'
 import { getProducts, getCategories } from '@/lib/products'
-import { getShippingConfig } from '@/lib/settings'
+import { getShippingConfig, getTestimonialsSection } from '@/lib/settings'
+import { getTestimonials, summarise } from '@/lib/testimonials'
 import { BadgeCheck, Package, ShieldCheck, Heart, Star, Mail, Gift, Instagram } from 'lucide-react'
 import ReviewCarousel from '@/components/ReviewCarousel'
 
@@ -14,23 +15,19 @@ export const metadata: Metadata = {
   description: 'Discover luxury hair extensions at Glamm. Premium 100% virgin human hair in wavy, straight, curly styles & HD closures. Free shipping, 30-day returns.',
 }
 
-const testimonials = [
-  { name: 'Best hair I’ve ever bought!', initial: 'B', quote: "Soft, full, and zero shedding. I’m obsessed." },
-  { name: 'My man thought it was my real hair.', initial: 'M', quote: "And honestly… I didn’t correct him." },
-  { name: 'Installed it twice and it still looks new.', initial: 'I', quote: "Quality is crazy good." },
-  { name: 'I got compliments before I even sat down.', initial: 'C', quote: "This hair is THAT girl." },
-  { name: 'Shipping was fast and the hair is gorgeous.', initial: 'S', quote: "10/10 experience." },
-  { name: 'I’m a stylist and I recommend this brand now.', initial: 'R', quote: "Clients love it every time." },
-  { name: 'The curls stayed popping all week.', initial: 'T', quote: "No frizz, no drama." },
-  { name: 'I was scared to try a new brand… now I’m loyal.', initial: 'L', quote: "Glamm Hair won me over." },
-  { name: 'Feels like butter, looks like luxury.', initial: 'F', quote: "I’m not buying hair anywhere else." },
-  { name: 'I don’t usually leave reviews but WOW.', initial: 'W', quote: "This hair gave what it needed to give." },
-]
-
 export const revalidate = 60
 
 export default async function Home() {
-  const [products, categories, shipping] = await Promise.all([getProducts(), getCategories(), getShippingConfig()])
+  const [products, categories, shipping, testimonials, testimonialsSection] = await Promise.all([
+    getProducts(),
+    getCategories(),
+    getShippingConfig(),
+    getTestimonials(),
+    getTestimonialsSection(),
+  ])
+
+  // The badge above the carousel: averaged over the testimonials actually shown.
+  const rating = summarise(testimonials)
 
   return (
     <>
@@ -159,33 +156,42 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="section container-max">
-        <div className="text-center mb-10">
-          <h2 className="section-title">Real Reviews. Real Results.</h2>
-          <h3 className="text-3xl md:text-4xl font-bold mb-5">What Our Customers Say</h3>
-          <div className="inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full glass px-6 py-3 shadow-sm">
-            <div className="flex -space-x-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-7 w-7 rounded-full bg-gradient-to-br from-accent to-accent-dark border-2 border-white" />
-              ))}
+      {/* Testimonials — hidden entirely if the admin has hidden every quote */}
+      {testimonials.length > 0 && (
+        <section className="section container-max">
+          <div className="text-center mb-10">
+            <h2 className="section-title">{testimonialsSection.eyebrow}</h2>
+            <h3 className="text-3xl md:text-4xl font-bold mb-5">{testimonialsSection.heading}</h3>
+            <div className="inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full glass px-6 py-3 shadow-sm">
+              <div className="flex -space-x-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-7 w-7 rounded-full bg-gradient-to-br from-accent to-accent-dark border-2 border-white" />
+                ))}
+              </div>
+              <div className="flex gap-0.5" role="img" aria-label={`${rating.average} out of 5 stars`}>
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <Star
+                    key={j}
+                    className={`h-4 w-4 ${
+                      j <= Math.round(rating.average) ? 'fill-[#febf6b] text-[#febf6b]' : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="font-bold">{rating.average.toFixed(1)}/5</span>
+              <span className="text-sm text-text-muted">
+                from {rating.count} verified review{rating.count === 1 ? '' : 's'}
+              </span>
             </div>
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, j) => (
-                <Star key={j} className="h-4 w-4 fill-[#febf6b] text-[#febf6b]" />
-              ))}
-            </div>
-            <span className="font-bold">4.9/5</span>
-            <span className="text-sm text-text-muted">from 5,000+ verified reviews</span>
           </div>
-        </div>
 
-        <ReviewCarousel testimonials={testimonials} />
+          <ReviewCarousel testimonials={testimonials} />
 
-        <div className="mt-10 text-center">
-          <Link href="/shop" className="btn btn-primary btn-lg">Shop The Collection</Link>
-        </div>
-      </section>
+          <div className="mt-10 text-center">
+            <Link href="/shop" className="btn btn-primary btn-lg">Shop The Collection</Link>
+          </div>
+        </section>
+      )}
 
       {/* Newsletter */}
       <section className="section relative overflow-hidden">

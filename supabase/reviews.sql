@@ -12,11 +12,13 @@ create table if not exists public.reviews (
   title        text,
   body         text,
   status       text not null default 'pending',   -- pending | approved | rejected
+  sort_order   integer not null default 0,         -- admin display order (reorder-reviews.sql)
   created_at   timestamptz not null default now()
 );
 
 create index if not exists reviews_product_idx on public.reviews (product_id);
 create index if not exists reviews_status_idx  on public.reviews (status);
+create index if not exists reviews_sort_order_idx on public.reviews (sort_order);
 
 -- Only approved reviews are public; submissions & moderation go through the
 -- service_role key (which bypasses RLS) in the API routes.

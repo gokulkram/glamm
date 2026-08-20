@@ -2,14 +2,17 @@
 
 import { useRef } from 'react'
 import { Star, Quote, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Testimonial } from '@/lib/testimonials'
 
-export type Testimonial = { name: string; initial: string; quote: string }
-
-function Stars({ className = 'h-4 w-4' }: { className?: string }) {
+/** `n` filled stars out of five — the rating the admin picked for the card. */
+function Stars({ n, className = 'h-4 w-4' }: { n: number; className?: string }) {
   return (
-    <div className="flex gap-0.5">
-      {[...Array(5)].map((_, j) => (
-        <Star key={j} className={`${className} fill-[#febf6b] text-[#febf6b]`} />
+    <div className="flex gap-0.5" role="img" aria-label={`${n} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((j) => (
+        <Star
+          key={j}
+          className={`${className} ${j <= n ? 'fill-[#febf6b] text-[#febf6b]' : 'text-gray-300'}`}
+        />
       ))}
     </div>
   )
@@ -51,7 +54,7 @@ export default function ReviewCarousel({ testimonials }: { testimonials: Testimo
       >
         {testimonials.map((t, i) => (
           <figure
-            key={i}
+            key={t.id}
             className="relative flex w-[86%] shrink-0 snap-start flex-col overflow-hidden rounded-[28px] border border-border bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-large sm:w-[47%] lg:w-[31.5%]"
           >
             {/* decorative accent glow + ghost index */}
@@ -61,14 +64,14 @@ export default function ReviewCarousel({ testimonials }: { testimonials: Testimo
             </span>
 
             <Quote className="mb-4 h-10 w-10 text-accent" />
-            <Stars className="mb-4 h-4 w-4" />
-            <p className="mb-3 text-lg font-bold leading-snug">{t.name}</p>
+            <Stars n={t.rating} className="mb-4 h-4 w-4" />
+            <p className="mb-3 text-lg font-bold leading-snug">{t.headline}</p>
             <blockquote className="flex-1 leading-relaxed text-text-muted">&ldquo;{t.quote}&rdquo;</blockquote>
 
             <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">
               <div className="rounded-full bg-gradient-to-br from-accent to-[#febf6b] p-[2px]">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-sm font-bold text-accent">
-                  {t.initial}
+                  {t.initial || t.headline.slice(0, 1).toUpperCase()}
                 </div>
               </div>
               <div className="leading-tight">

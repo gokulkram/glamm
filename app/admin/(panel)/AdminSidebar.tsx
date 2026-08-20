@@ -10,6 +10,7 @@ import {
   Settings,
   Newspaper,
   Star,
+  Quote,
   Ticket,
   ExternalLink,
   LogOut,
@@ -24,6 +25,7 @@ const NAV = [
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/blog', label: 'Blog', icon: Newspaper },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: Quote },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

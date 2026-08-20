@@ -17,8 +17,7 @@ import {
 } from 'lucide-react'
 import type { Product, Category } from '@/lib/data'
 import Pagination from '@/components/admin/Pagination'
-
-const PAGE_SIZE = 10
+import { usePagination } from '@/components/admin/usePagination'
 
 type DropTarget = { id: number; placement: 'before' | 'after' }
 
@@ -35,7 +34,7 @@ export default function ProductTable({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
-  const [page, setPage] = useState(1)
+
 
   // Local copy of the catalog order so a drag can be applied optimistically.
   // Re-seeded whenever the server sends a fresh list (router.refresh()).
@@ -84,9 +83,8 @@ export default function ProductTable({
     })
   }, [items, search, category])
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(page, pageCount)
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const paging = usePagination(filtered)
+  const { page: currentPage, pageItems, rowsPerPage, setPage } = paging
 
   // reset to page 1 whenever filters change
   const resetAnd = (fn: () => void) => {
@@ -202,7 +200,7 @@ export default function ProductTable({
     // Follow the product to the page it landed on, otherwise it just
     // disappears — and come back if the save is rejected.
     const previousPage = currentPage
-    setPage(Math.ceil(position / PAGE_SIZE))
+    setPage(Math.ceil(position / rowsPerPage))
     const ok = await commitOrder(rest, { id: product.id, position }, product.id)
     if (!ok) setPage(previousPage)
   }
@@ -455,13 +453,7 @@ export default function ProductTable({
         </table>
       </div>
 
-      <Pagination
-        page={currentPage}
-        pageCount={pageCount}
-        total={filtered.length}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
-      />
+      <Pagination {...paging.paginationProps} />
     </div>
   )
 }

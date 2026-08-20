@@ -17,18 +17,55 @@ export type RatingSummary = { average: number; count: number }
 
 const COLUMNS = 'id, product_id, author_name, rating, title, body, status, created_at'
 
-/** Approved reviews for a product, newest first. */
+// Postgres: column does not exist.
+const UNDEFINED_COLUMN = '42703'
+
+/**
+ * Read reviews in the order the admin arranged them (`sort_order`), with rows
+ * nobody has placed yet falling back to newest-first. The trailing `id` keeps
+ * the sequence stable, which drag-to-reorder depends on — it derives positions
+ * from this order.
+ *
+ * Retries without `sort_order` when supabase/reorder-reviews.sql hasn't been
+ * run yet, so product pages don't lose every review in the meantime.
+ */
+async function readReviews(opts: { productId?: number; approvedOnly?: boolean } = {}): Promise<Review[]> {
+  const sb = supabaseAdmin()
+  const build = () => {
+    let q = sb.from('reviews').select(COLUMNS)
+    if (opts.productId !== undefined) q = q.eq('product_id', opts.productId)
+    if (opts.approvedOnly) q = q.eq('status', 'approved')
+    return q
+  }
+
+  const { data, error } = await build()
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+  if (!error) return (data as Review[]) ?? []
+  if (error.code !== UNDEFINED_COLUMN) throw error
+
+  const legacy = await build()
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+  if (legacy.error) throw legacy.error
+  return (legacy.data as Review[]) ?? []
+}
+
+/**
+ * Public reviews are bylined with the first name only, so a full name never
+ * reaches the storefront or the public /api/reviews payload. The admin list
+ * reads through getAllReviews and still sees the name as it was submitted.
+ */
+function firstNameOnly(review: Review): Review {
+  const first = review.author_name.trim().split(/\s+/)[0]
+  return first ? { ...review, author_name: first } : review
+}
+
+/** Approved reviews for a product, in the admin's chosen order. */
 export async function getApprovedReviews(productId: number): Promise<Review[]> {
   try {
-    const sb = supabaseAdmin()
-    const { data, error } = await sb
-      .from('reviews')
-      .select(COLUMNS)
-      .eq('product_id', productId)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-    if (error) return []
-    return (data as Review[]) ?? []
+    return (await readReviews({ productId, approvedOnly: true })).map(firstNameOnly)
   } catch {
     return []
   }
@@ -52,18 +89,16 @@ export async function getRatingSummary(productId: number): Promise<RatingSummary
   }
 }
 
-/** All reviews (admin), pending first then newest. */
+/**
+ * All reviews (admin), in the hand-arranged order.
+ *
+ * Deliberately not grouped by status any more: the list is what the admin
+ * drags rows around in, so what it shows has to be the stored order. The
+ * moderation queue is a status filter in the table instead.
+ */
 export async function getAllReviews(): Promise<Review[]> {
   try {
-    const sb = supabaseAdmin()
-    const { data, error } = await sb
-      .from('reviews')
-      .select(COLUMNS)
-      .order('created_at', { ascending: false })
-    if (error) return []
-    const all = (data as Review[]) ?? []
-    const order = { pending: 0, approved: 1, rejected: 2 } as Record<ReviewStatus, number>
-    return all.sort((a, b) => order[a.status] - order[b.status])
+    return await readReviews()
   } catch {
     return []
   }

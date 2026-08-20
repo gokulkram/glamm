@@ -2,23 +2,35 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+/** Page size meaning "no limit" — kept as 0 so it stays a plain number. */
+export const ALL_ROWS = 0
+
+export const PAGE_SIZE_OPTIONS = [10, 20, 50, ALL_ROWS]
+
 export default function Pagination({
   page,
   pageCount,
   total,
   pageSize,
   onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
 }: {
   page: number
   pageCount: number
   total: number
+  /** Rows per page, or ALL_ROWS for every row on one page. */
   pageSize: number
   onPageChange: (p: number) => void
+  /** Pass to show the rows-per-page picker; omit to keep the size fixed. */
+  onPageSizeChange?: (size: number) => void
+  pageSizeOptions?: number[]
 }) {
   if (total === 0) return null
 
-  const from = (page - 1) * pageSize + 1
-  const to = Math.min(page * pageSize, total)
+  const rows = pageSize === ALL_ROWS ? total : pageSize
+  const from = (page - 1) * rows + 1
+  const to = Math.min(page * rows, total)
 
   // compact page numbers around the current page
   const pages: number[] = []
@@ -28,11 +40,32 @@ export default function Pagination({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border text-sm">
-      <span className="text-text-muted">
-        Showing <span className="font-medium text-text">{from}</span>–
-        <span className="font-medium text-text">{to}</span> of{' '}
-        <span className="font-medium text-text">{total}</span>
-      </span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="text-text-muted">
+          Showing <span className="font-medium text-text">{from}</span>–
+          <span className="font-medium text-text">{to}</span> of{' '}
+          <span className="font-medium text-text">{total}</span>
+        </span>
+
+        {onPageSizeChange && (
+          <label className="flex items-center gap-1.5 text-text-muted">
+            Show
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              aria-label="Rows per page"
+              className="rounded-lg border border-border bg-white px-2 py-1 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size === ALL_ROWS ? 'All' : size}
+                </option>
+              ))}
+            </select>
+            per page
+          </label>
+        )}
+      </div>
 
       <div className="flex items-center gap-1">
         <button

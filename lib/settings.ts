@@ -1,9 +1,15 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { DEFAULT_SHIPPING, type ShippingConfig } from '@/lib/checkout/shipping'
-import { DEFAULT_PRODUCT_CONTENT, type ProductContent } from '@/lib/content'
+import {
+  DEFAULT_PRODUCT_CONTENT,
+  DEFAULT_TESTIMONIALS_SECTION,
+  type ProductContent,
+  type TestimonialsSection,
+} from '@/lib/content'
 
 const SHIPPING_KEY = 'shipping'
 const PRODUCT_CONTENT_KEY = 'product_content'
+const TESTIMONIALS_SECTION_KEY = 'testimonials_section'
 
 /**
  * Read the shipping config from the DB. Falls back to defaults if the
@@ -100,5 +106,51 @@ export async function setProductContent(
     return { ok: true }
   } catch {
     return { ok: false, error: 'Could not save content' }
+  }
+}
+
+/**
+ * The heading wording above the homepage testimonial carousel. Falls back to
+ * the shipped copy if the table/row is missing, so the section never renders
+ * with blanks.
+ */
+export async function getTestimonialsSection(): Promise<TestimonialsSection> {
+  try {
+    const sb = supabaseAdmin()
+    const { data, error } = await sb
+      .from('app_settings')
+      .select('value')
+      .eq('key', TESTIMONIALS_SECTION_KEY)
+      .maybeSingle()
+    if (error || !data) return DEFAULT_TESTIMONIALS_SECTION
+    const v = (data.value ?? {}) as Partial<TestimonialsSection>
+    const pick = (k: keyof TestimonialsSection) =>
+      typeof v[k] === 'string' && v[k]!.trim() ? (v[k] as string) : DEFAULT_TESTIMONIALS_SECTION[k]
+    return { eyebrow: pick('eyebrow'), heading: pick('heading') }
+  } catch {
+    return DEFAULT_TESTIMONIALS_SECTION
+  }
+}
+
+export async function setTestimonialsSection(
+  section: TestimonialsSection,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const value = {
+    eyebrow: String(section.eyebrow ?? '').trim().slice(0, 120),
+    heading: String(section.heading ?? '').trim().slice(0, 120),
+  }
+  if (!value.heading) return { ok: false, error: 'A heading is required' }
+  try {
+    const sb = supabaseAdmin()
+    const { error } = await sb
+      .from('app_settings')
+      .upsert({ key: TESTIMONIALS_SECTION_KEY, value }, { onConflict: 'key' })
+    if (error) {
+      console.error('setTestimonialsSection failed:', error)
+      return { ok: false, error: 'Could not save the section (has settings.sql been run?)' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not save the section' }
   }
 }

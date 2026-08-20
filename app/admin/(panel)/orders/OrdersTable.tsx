@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { Search, ShoppingBag, Eye } from 'lucide-react'
 import type { AdminOrder } from '@/lib/admin/data'
 import Pagination from '@/components/admin/Pagination'
-
-const PAGE_SIZE = 10
+import { usePagination } from '@/components/admin/usePagination'
 
 const STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
 
@@ -36,7 +35,6 @@ function formatDate(iso: string) {
 export default function OrdersTable({ orders }: { orders: AdminOrder[] }) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
-  const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -48,10 +46,10 @@ export default function OrdersTable({ orders }: { orders: AdminOrder[] }) {
     })
   }, [orders, search, status])
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(page, pageCount)
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const resetAnd = (fn: () => void) => { fn(); setPage(1) }
+  const paging = usePagination(filtered)
+  const pageItems = paging.pageItems
+  // Changing a filter can shrink the list under your feet — go back to page 1.
+  const resetAnd = (fn: () => void) => { fn(); paging.setPage(1) }
 
   return (
     <div className="card overflow-hidden">
@@ -126,7 +124,7 @@ export default function OrdersTable({ orders }: { orders: AdminOrder[] }) {
         </table>
       </div>
 
-      <Pagination page={currentPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      <Pagination {...paging.paginationProps} />
     </div>
   )
 }

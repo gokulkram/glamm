@@ -5,9 +5,8 @@ import Link from 'next/link'
 import { Search, Users, Eye } from 'lucide-react'
 import type { AdminCustomer } from '@/lib/admin/data'
 import Pagination from '@/components/admin/Pagination'
+import { usePagination } from '@/components/admin/usePagination'
 import { EmailLink, PhoneLink } from '@/components/admin/ContactLinks'
-
-const PAGE_SIZE = 10
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -15,7 +14,6 @@ function formatDate(iso: string) {
 
 export default function CustomersTable({ customers }: { customers: AdminCustomer[] }) {
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -32,9 +30,8 @@ export default function CustomersTable({ customers }: { customers: AdminCustomer
     )
   }, [customers, search])
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(page, pageCount)
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const paging = usePagination(filtered)
+  const pageItems = paging.pageItems
 
   return (
     <div className="card overflow-hidden">
@@ -45,7 +42,7 @@ export default function CustomersTable({ customers }: { customers: AdminCustomer
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
-              setPage(1)
+              paging.setPage(1)
             }}
             placeholder="Search by name, email, phone or city…"
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-white text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -125,7 +122,7 @@ export default function CustomersTable({ customers }: { customers: AdminCustomer
         </table>
       </div>
 
-      <Pagination page={currentPage} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      <Pagination {...paging.paginationProps} />
     </div>
   )
 }

@@ -6,11 +6,15 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, Loader2 } from 'lucide-react'
 import type { BlogPost } from '@/lib/blog'
+import Pagination from '@/components/admin/Pagination'
+import { usePagination } from '@/components/admin/usePagination'
 
 export default function BlogTable({ posts }: { posts: BlogPost[] }) {
   const router = useRouter()
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const paging = usePagination(posts)
 
   const handleDelete = async (post: BlogPost) => {
     if (!confirm(`Delete "${post.title}"? This cannot be undone.`)) return
@@ -52,7 +56,7 @@ export default function BlogTable({ posts }: { posts: BlogPost[] }) {
                 </td>
               </tr>
             )}
-            {posts.map((p) => (
+            {paging.pageItems.map((p) => (
               <tr key={p.id} className="hover:bg-surface/50">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -102,6 +106,8 @@ export default function BlogTable({ posts }: { posts: BlogPost[] }) {
           </tbody>
         </table>
       </div>
+
+      <Pagination {...paging.paginationProps} />
     </div>
   )
 }
