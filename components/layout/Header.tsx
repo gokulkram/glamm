@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Menu, X, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Heart, Menu, X, ChevronDown, Search } from 'lucide-react';
 import AccountMenu from './AccountMenu';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
@@ -73,6 +74,28 @@ export default function Header() {
 
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
+
+  const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [term, setTerm] = useState('');
+  const searchInput = useRef<HTMLInputElement>(null);
+
+  // /shop already filters on ?q= — the header just puts a term in the URL and
+  // sends you there, so results stay shareable and the back button works.
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = term.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
+    router.push(`/shop?q=${encodeURIComponent(q)}`);
+  };
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    // The field is rendered by this same click, so focus after paint.
+    requestAnimationFrame(() => searchInput.current?.focus());
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,6 +168,34 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <AccountMenu />
 
+            {/* Search — collapsed to an icon until asked for, so the bar stays clean */}
+            {searchOpen ? (
+              <form onSubmit={submitSearch} className="hidden md:flex items-center">
+                <input
+                  ref={searchInput}
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                  onBlur={() => { if (!term.trim()) setSearchOpen(false); }}
+                  onKeyDown={(e) => { if (e.key === 'Escape') { setTerm(''); setSearchOpen(false); } }}
+                  placeholder="Search products…"
+                  aria-label="Search products"
+                  className="w-52 px-4 py-2 rounded-full border border-border bg-white text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+                />
+                <button type="submit" className="p-2 hover:text-accent transition-colors" aria-label="Search">
+                  <Search className="w-5 h-5" />
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={openSearch}
+                className="hidden md:block p-2 hover:text-accent transition-colors"
+                aria-label="Search products"
+              >
+                <Search className="w-6 h-6" />
+              </button>
+            )}
+
             <Link
               href="/wishlist"
               className="relative p-2 hover:text-accent transition-colors"
@@ -187,6 +238,19 @@ export default function Header() {
       {mobileMenuOpen && (
         <nav className="md:hidden bg-white border-t border-border shadow-lg">
           <div className="container-max py-4 space-y-1">
+            {/* On mobile the field lives in the menu rather than crowding the bar */}
+            <form onSubmit={submitSearch} className="flex items-center gap-2 px-4 pb-3">
+              <input
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                placeholder="Search products…"
+                aria-label="Search products"
+                className="flex-1 px-4 py-2 rounded-full border border-border bg-white text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+              />
+              <button type="submit" className="p-2 hover:text-accent transition-colors" aria-label="Search">
+                <Search className="w-5 h-5" />
+              </button>
+            </form>
             {navLinks.map((link) => (
               link.children ? (
                 <div key={link.label}>

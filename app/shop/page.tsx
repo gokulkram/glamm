@@ -36,6 +36,11 @@ function ShopContent() {
   const searchParams = useSearchParams()
   useEffect(() => {
     setSelectedCategory(searchParams.get('category') ?? 'all')
+    // ?q= comes from the header search, which links to /shop?q=... with no
+    // category. That resets the category filter on purpose: a header search is
+    // meant to look across the whole catalogue, and silently keeping a filter
+    // the shopper had forgotten would just return nothing.
+    setSearchQuery(searchParams.get('q') ?? '')
   }, [searchParams])
 
   const filteredProducts = useMemo(() => {
