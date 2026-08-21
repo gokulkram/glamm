@@ -262,6 +262,15 @@ export type CustomerDetail = {
   id: string
   email: string
   name: string
+  /** The stored parts, for the admin edit form. */
+  firstName: string
+  lastName: string
+  /**
+   * `phone` falls back to the latest order's phone when the customer record
+   * has none. This is the value actually on the customer row, so the edit form
+   * doesn't save an address-derived number back as if it had been typed.
+   */
+  phoneOnRecord: string
   phone: string | null
   createdAt: string
   hasAccount: boolean
@@ -369,6 +378,9 @@ export async function getCustomerDetail(id: string): Promise<CustomerDetail | nu
     id: customer.id,
     email,
     name: name || '—',
+    firstName: customer.first_name ?? '',
+    lastName: customer.last_name ?? '',
+    phoneOnRecord: customer.phone ?? '',
     phone: customer.phone ?? addresses[0]?.phone ?? null,
     createdAt: customer.created_at,
     hasAccount: Boolean(customer.user_id),

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, MapPin, User, ShoppingBag, BookUser, History } from 'lucide-react'
 import { getCustomerDetail, type CustomerAddress } from '@/lib/admin/data'
 import { EmailLink, PhoneLink } from '@/components/admin/ContactLinks'
+import CustomerIdentityForm from './CustomerIdentityForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,10 +97,15 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-dark text-lg font-bold text-white uppercase">
             {(customer.name && customer.name !== '—' ? customer.name : customer.email).slice(0, 2)}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">{customer.name}</h1>
-            <p className="text-text-muted text-sm">Customer since {formatDate(customer.createdAt)}</p>
-          </div>
+          <CustomerIdentityForm
+            id={customer.id}
+            name={customer.name}
+            firstName={customer.firstName}
+            lastName={customer.lastName}
+            phoneOnRecord={customer.phoneOnRecord}
+            email={customer.email}
+            since={formatDate(customer.createdAt)}
+          />
         </div>
         <span
           className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
