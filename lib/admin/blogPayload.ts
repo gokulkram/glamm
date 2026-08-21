@@ -1,3 +1,5 @@
+import { sanitizeRichText } from '@/lib/richText'
+
 export type BlogInput = {
   title?: string
   slug?: string
@@ -43,7 +45,10 @@ export function buildBlogRow(input: BlogInput): { row?: BlogRow; error?: string 
       title,
       slug,
       excerpt: (input.excerpt ?? '').trim(),
-      content: input.content ?? '',
+      // The body is authored as HTML and rendered with dangerouslySetInnerHTML.
+      // Cleaning it here means the stored row is already safe, so nothing
+      // downstream has to remember to sanitise before using it.
+      content: sanitizeRichText(input.content ?? ''),
       author: (input.author ?? '').trim(),
       category: (input.category ?? '').trim(),
       image: (input.image ?? '').trim(),

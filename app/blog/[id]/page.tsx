@@ -3,7 +3,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Calendar, User, Clock, ArrowLeft, ArrowRight } from 'lucide-react'
-import { getBlogPost, getBlogPosts, parseContent } from '@/lib/blog'
+import { getBlogPost, getBlogPosts } from '@/lib/blog'
+import { renderRichText } from '@/lib/richText'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
   const post = await getBlogPost(Number(params.id))
   if (!post || !post.published) notFound()
 
-  const blocks = parseContent(post.content)
+  const bodyHtml = renderRichText(post.content)
   const related = (await getBlogPosts()).filter((p) => p.id !== post.id).slice(0, 2)
 
   return (
@@ -55,27 +56,8 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
           />
         </div>
 
-        {/* Body */}
-        <div className="space-y-5">
-          {blocks.map((block, i) => {
-            if (block.type === 'heading') {
-              return <h2 key={i} className="text-2xl font-bold mt-10 mb-1">{block.text}</h2>
-            }
-            if (block.type === 'list') {
-              return (
-                <ul key={i} className="space-y-2.5">
-                  {block.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-3 text-text/90 leading-relaxed">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              )
-            }
-            return <p key={i} className="text-lg leading-relaxed text-text/90">{block.text}</p>
-          })}
-        </div>
+        {/* Body. Sanitised in renderRichText — see lib/richText.ts. */}
+        <div className="blog-content" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
 
         {/* CTA */}
         <div className="mt-12 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-dark/10 border border-accent/20 p-8 text-center">
