@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { retryQuery } from '@/lib/supabase/retry'
 import { DEFAULT_SHIPPING, type ShippingConfig } from '@/lib/checkout/shipping'
 import {
   DEFAULT_PRODUCT_CONTENT,
@@ -19,11 +20,12 @@ const TESTIMONIALS_SECTION_KEY = 'testimonials_section'
 export async function getShippingConfig(): Promise<ShippingConfig> {
   try {
     const sb = supabaseAdmin()
-    const { data, error } = await sb
-      .from('app_settings')
-      .select('value')
-      .eq('key', SHIPPING_KEY)
-      .maybeSingle()
+    const { data, error } = await retryQuery('getShippingConfig', () =>
+      sb.from('app_settings').select('value').eq('key', SHIPPING_KEY).maybeSingle(),
+    )
+    // A failed read is not an unset row, and used to go unlogged — which left
+    // a broken connection looking exactly like a setting nobody had saved yet.
+    if (error) console.error('getShippingConfig failed:', error)
     if (error || !data) return DEFAULT_SHIPPING
     const v = (data.value ?? {}) as Partial<ShippingConfig>
     const freeThreshold = Number(v.freeThreshold)
@@ -70,11 +72,12 @@ export async function setShippingConfig(
 export async function getProductContent(): Promise<ProductContent> {
   try {
     const sb = supabaseAdmin()
-    const { data, error } = await sb
-      .from('app_settings')
-      .select('value')
-      .eq('key', PRODUCT_CONTENT_KEY)
-      .maybeSingle()
+    const { data, error } = await retryQuery('getProductContent', () =>
+      sb.from('app_settings').select('value').eq('key', PRODUCT_CONTENT_KEY).maybeSingle(),
+    )
+    // A failed read is not an unset row, and used to go unlogged — which left
+    // a broken connection looking exactly like a setting nobody had saved yet.
+    if (error) console.error('getProductContent failed:', error)
     if (error || !data) return DEFAULT_PRODUCT_CONTENT
     const v = (data.value ?? {}) as Partial<ProductContent>
     return {
@@ -117,11 +120,12 @@ export async function setProductContent(
 export async function getTestimonialsSection(): Promise<TestimonialsSection> {
   try {
     const sb = supabaseAdmin()
-    const { data, error } = await sb
-      .from('app_settings')
-      .select('value')
-      .eq('key', TESTIMONIALS_SECTION_KEY)
-      .maybeSingle()
+    const { data, error } = await retryQuery('getTestimonialsSection', () =>
+      sb.from('app_settings').select('value').eq('key', TESTIMONIALS_SECTION_KEY).maybeSingle(),
+    )
+    // A failed read is not an unset row, and used to go unlogged — which left
+    // a broken connection looking exactly like a setting nobody had saved yet.
+    if (error) console.error('getTestimonialsSection failed:', error)
     if (error || !data) return DEFAULT_TESTIMONIALS_SECTION
     const v = (data.value ?? {}) as Partial<TestimonialsSection>
     const pick = (k: keyof TestimonialsSection) =>

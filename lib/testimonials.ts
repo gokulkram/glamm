@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { withAuthRetry } from '@/lib/supabase/retry'
 
 /**
  * A homepage testimonial. `headline` is the bold line on the card (a sentence,
@@ -113,7 +114,7 @@ export function summarise(testimonials: Testimonial[]): TestimonialSummary {
 /** Active testimonials for the homepage carousel, in the admin's order. */
 export async function getTestimonials(): Promise<Testimonial[]> {
   try {
-    const rows = await readTestimonials(true)
+    const rows = await withAuthRetry('getTestimonials', () => readTestimonials(true))
     // A missing table throws; an empty table means the admin hid or deleted
     // every one, which is a choice worth honouring — don't resurrect the seed.
     return rows
@@ -128,7 +129,7 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 /** Every testimonial, active or not (admin list). */
 export async function getAllTestimonials(): Promise<Testimonial[]> {
   try {
-    return await readTestimonials(false)
+    return await withAuthRetry('getAllTestimonials', () => readTestimonials(false))
   } catch (e) {
     console.error('getAllTestimonials failed:', e)
     return []

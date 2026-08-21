@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { retryQuery } from '@/lib/supabase/retry'
 import type { Product, Category } from '@/lib/data'
 
 // Shape of a row in the public.products table (snake_case).
@@ -49,12 +50,14 @@ const PRODUCT_COLUMNS =
 /** Published products only — for every public surface (home, shop, API, pricing). */
 export async function getProducts(): Promise<Product[]> {
   const sb = supabaseAdmin()
-  const { data, error } = await sb
-    .from('products')
-    .select(PRODUCT_COLUMNS)
-    .eq('published', true)
-    .order('sort_order', { ascending: true })
-    .order('id', { ascending: true })
+  const { data, error } = await retryQuery('getProducts', () =>
+    sb
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('published', true)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true }),
+  )
 
   if (error) {
     console.error('getProducts failed:', error)
@@ -66,11 +69,13 @@ export async function getProducts(): Promise<Product[]> {
 /** All products, published or not — for the admin panel only. */
 export async function getAllProducts(): Promise<Product[]> {
   const sb = supabaseAdmin()
-  const { data, error } = await sb
-    .from('products')
-    .select(PRODUCT_COLUMNS)
-    .order('sort_order', { ascending: true })
-    .order('id', { ascending: true })
+  const { data, error } = await retryQuery('getAllProducts', () =>
+    sb
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true }),
+  )
 
   if (error) {
     console.error('getAllProducts failed:', error)
@@ -81,12 +86,14 @@ export async function getAllProducts(): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const sb = supabaseAdmin()
-  const { data, error } = await sb
-    .from('products')
-    .select(PRODUCT_COLUMNS)
-    .eq('slug', slug)
-    .eq('published', true)
-    .maybeSingle()
+  const { data, error } = await retryQuery('getProductBySlug', () =>
+    sb
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('slug', slug)
+      .eq('published', true)
+      .maybeSingle(),
+  )
 
   if (error) {
     console.error('getProductBySlug failed:', error)
@@ -97,11 +104,13 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getProductById(id: number): Promise<Product | null> {
   const sb = supabaseAdmin()
-  const { data, error } = await sb
-    .from('products')
-    .select(PRODUCT_COLUMNS)
-    .eq('id', id)
-    .maybeSingle()
+  const { data, error } = await retryQuery('getProductById', () =>
+    sb
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('id', id)
+      .maybeSingle(),
+  )
 
   if (error) {
     console.error('getProductById failed:', error)
@@ -115,8 +124,10 @@ export type AdminCategory = Category & { id: number }
 async function fetchCategoriesWithCounts(): Promise<AdminCategory[]> {
   const sb = supabaseAdmin()
   const [{ data: cats, error: catErr }, { data: prods, error: prodErr }] = await Promise.all([
-    sb.from('categories').select('id, name, slug, sort_order').order('sort_order', { ascending: true }),
-    sb.from('products').select('category'),
+    retryQuery('getCategories', () =>
+      sb.from('categories').select('id, name, slug, sort_order').order('sort_order', { ascending: true }),
+    ),
+    retryQuery('getCategories:productCounts', () => sb.from('products').select('category')),
   ])
 
   if (catErr || prodErr) {
