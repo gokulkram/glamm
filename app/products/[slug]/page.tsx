@@ -11,7 +11,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useShipping } from '@/contexts/ShippingContext'
 import ProductReviews from '@/components/ProductReviews'
-import { DEFAULT_PRODUCT_CONTENT, parseContentBlocks, type ProductContent } from '@/lib/content'
+import { DEFAULT_PRODUCT_CONTENT, type ProductContent } from '@/lib/content'
 
 export default function ProductPage() {
   const params = useParams()
@@ -496,13 +496,13 @@ export default function ProductPage() {
               {activeTab === 'care' && (
                 <div className="animate-fade-in">
                   <h3 className="text-3xl font-bold mb-6">Hair Care Instructions</h3>
-                  <ContentBody raw={content.care} />
+                  <ContentBody html={content.care} />
                 </div>
               )}
               {activeTab === 'shipping' && (
                 <div className="animate-fade-in">
                   <h3 className="text-3xl font-bold mb-6">Shipping &amp; Returns</h3>
-                  <ContentBody raw={content.shipping} />
+                  <ContentBody html={content.shipping} />
                 </div>
               )}
             </div>
@@ -542,29 +542,12 @@ export default function ProductPage() {
 }
 
 // Renders markdown-lite product content (## headings, - bullets, paragraphs).
-function ContentBody({ raw }: { raw: string }) {
-  const blocks = parseContentBlocks(raw)
-  return (
-    <div className="space-y-4">
-      {blocks.map((block, i) => {
-        if (block.type === 'heading') {
-          return <h4 key={i} className="text-2xl font-bold mt-8 mb-2">{block.text}</h4>
-        }
-        if (block.type === 'list') {
-          return (
-            <ul key={i} className="space-y-2">
-              {block.items.map((item, j) => (
-                <li key={j} className="flex items-start gap-3 text-text-muted">
-                  <Check className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          )
-        }
-        return <p key={i} className="text-lg text-text-muted leading-relaxed">{block.text}</p>
-      })}
-    </div>
-  )
+/**
+ * The Hair Care / Shipping tabs. `html` arrives already sanitised from
+ * /api/product-content — this is a client component and can't clean it itself,
+ * so nothing else may be passed in here.
+ */
+function ContentBody({ html }: { html: string }) {
+  return <div className="product-content" dangerouslySetInnerHTML={{ __html: html }} />
 }
 

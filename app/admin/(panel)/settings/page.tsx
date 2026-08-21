@@ -1,5 +1,6 @@
 import { getAdminProfile } from '@/lib/admin/data'
 import { getShippingConfig, getProductContent } from '@/lib/settings'
+import { renderRichText } from '@/lib/richText'
 import AdminSettingsForm from './AdminSettingsForm'
 import ShippingSettingsForm from './ShippingSettingsForm'
 import ProductContentForm from './ProductContentForm'
@@ -35,7 +36,15 @@ export default async function AdminSettingsPage() {
         <p className="text-text-muted text-sm mb-4">
           The Hair Care and Shipping &amp; Returns tabs shown on every product page.
         </p>
-        <ProductContentForm initial={productContent} />
+        {/* Same reason as the blog edit page: the editor speaks HTML, and content
+            still in the old line-based format would otherwise load as literal
+            "## " and "- " text and be flattened on the first save. */}
+        <ProductContentForm
+          initial={{
+            care: renderRichText(productContent.care),
+            shipping: renderRichText(productContent.shipping),
+          }}
+        />
       </div>
     </div>
   )

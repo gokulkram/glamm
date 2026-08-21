@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { retryQuery } from '@/lib/supabase/retry'
+import { sanitizeRichText } from '@/lib/richText'
 import { DEFAULT_SHIPPING, type ShippingConfig } from '@/lib/checkout/shipping'
 import {
   DEFAULT_PRODUCT_CONTENT,
@@ -99,9 +100,17 @@ export async function setProductContent(
   }
   try {
     const sb = supabaseAdmin()
+    // Authored as HTML in the admin editor and rendered with
+    // dangerouslySetInnerHTML on every product page, so clean it on the way in.
     const { error } = await sb
       .from('app_settings')
-      .upsert({ key: PRODUCT_CONTENT_KEY, value: { care, shipping } }, { onConflict: 'key' })
+      .upsert(
+        {
+          key: PRODUCT_CONTENT_KEY,
+          value: { care: sanitizeRichText(care), shipping: sanitizeRichText(shipping) },
+        },
+        { onConflict: 'key' },
+      )
     if (error) {
       console.error('setProductContent failed:', error)
       return { ok: false, error: 'Could not save content (has settings.sql been run?)' }

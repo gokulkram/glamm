@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Check } from 'lucide-react'
 import type { ProductContent } from '@/lib/content'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 export default function ProductContentForm({ initial }: { initial: ProductContent }) {
   const router = useRouter()
@@ -31,9 +32,6 @@ export default function ProductContentForm({ initial }: { initial: ProductConten
     router.refresh()
   }
 
-  const area =
-    'w-full px-3 py-2 rounded-lg border border-border bg-white text-sm font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent/30'
-
   return (
     <form onSubmit={save} className="card p-6 max-w-3xl space-y-5">
       {msg && (
@@ -48,15 +46,26 @@ export default function ProductContentForm({ initial }: { initial: ProductConten
 
       <div>
         <label className="block text-sm font-medium mb-1.5">Hair Care Instructions</label>
-        <textarea className={area} rows={12} value={care} onChange={(e) => setCare(e.target.value)} required />
+        {/* No upload route for product content, so the editor hides its image
+            button rather than offering an upload with nowhere to go. */}
+        <RichTextEditor
+          value={care}
+          onChange={setCare}
+          contentClass="product-content"
+          minHeightClass="min-h-[16rem]"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1.5">Shipping &amp; Returns</label>
-        <textarea className={area} rows={12} value={shipping} onChange={(e) => setShipping(e.target.value)} required />
+        <RichTextEditor
+          value={shipping}
+          onChange={setShipping}
+          contentClass="product-content"
+          minHeightClass="min-h-[16rem]"
+        />
       </div>
       <p className="text-xs text-text-muted">
-        Formatting: <code>## </code> starts a heading, lines starting with <code>- </code> become checklist items, and
-        blank lines separate paragraphs. Shows on every product&apos;s Hair Care and Shipping &amp; Returns tabs.
+        Shows on every product&apos;s Hair Care and Shipping &amp; Returns tabs.
       </p>
 
       <button type="submit" disabled={saving} className="btn btn-primary">
