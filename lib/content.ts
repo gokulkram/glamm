@@ -122,3 +122,61 @@ export const DEFAULT_TESTIMONIALS_SECTION: TestimonialsSection = {
   eyebrow: 'Real Reviews. Real Results.',
   heading: 'What Our Customers Say',
 }
+
+/**
+ * The homepage hero — the first thing on the site. Editable from Admin →
+ * Homepage.
+ *
+ * The two heading lines and the two subtitle lines are separate fields on
+ * purpose: each pair is styled differently (the second heading line is filled
+ * with a gradient, the second subtitle line is tinted), so they can't be one
+ * block of text without losing that.
+ *
+ * The trust row's icons stay in code — only the numbers and captions under
+ * them are editable.
+ */
+export type HeroStat = {
+  /** The big number, e.g. "100%". */
+  value: string
+  /** The caption under it, e.g. "Premium Quality". */
+  label: string
+}
+
+export type HeroContent = {
+  badge: string
+  headingTop: string
+  headingBottom: string
+  subtitle: string
+  subtitleAccent: string
+  primaryLabel: string
+  primaryHref: string
+  secondaryLabel: string
+  secondaryHref: string
+  /** Background image URL or path. */
+  image: string
+  /** Exactly three, matching the three icons the hero draws. */
+  stats: [HeroStat, HeroStat, HeroStat]
+  socialCount: string
+  socialLabel: string
+}
+
+/** What the hero shipped with — also the per-field fallback for blank input. */
+export const DEFAULT_HERO: HeroContent = {
+  badge: '100% Virgin Human Hair',
+  headingTop: 'Your Most Stunning',
+  headingBottom: 'Look Starts Here',
+  subtitle: 'Your Natural Beauty, Upgraded.',
+  subtitleAccent: 'Luxurious • Natural • Effortlessly Stunning',
+  primaryLabel: 'Shop Collection',
+  primaryHref: '/shop',
+  secondaryLabel: 'Discover More',
+  secondaryHref: '/about',
+  image: '/lucy-photos/_F8A0531-Edit.jpg',
+  stats: [
+    { value: '100%', label: 'Premium Quality' },
+    { value: 'Free', label: 'Shipping' },
+    { value: '30 Day', label: 'Guarantee' },
+  ],
+  socialCount: '5,000+',
+  socialLabel: 'Happy Customers',
+}

@@ -14,11 +14,13 @@ import {
   Ticket,
   ExternalLink,
   LogOut,
+  Home,
 } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 const NAV = [
   { href: '/admin', label: 'Products', icon: Package },
+  { href: '/admin/homepage', label: 'Homepage', icon: Home },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/discounts', label: 'Discounts', icon: Ticket },

@@ -5,7 +5,7 @@ import Hero from '@/components/Hero'
 import ProductCard from '@/components/ProductCard'
 import { LucyGallery } from '@/components/LucyGallery'
 import { getProducts, getCategories } from '@/lib/products'
-import { getShippingConfig, getTestimonialsSection } from '@/lib/settings'
+import { getHero, getShippingConfig, getTestimonialsSection } from '@/lib/settings'
 import { getTestimonials, summarise } from '@/lib/testimonials'
 import { BadgeCheck, Package, ShieldCheck, Heart, Star, Mail, Gift, Instagram } from 'lucide-react'
 import ReviewCarousel from '@/components/ReviewCarousel'
@@ -18,12 +18,13 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function Home() {
-  const [products, categories, shipping, testimonials, testimonialsSection] = await Promise.all([
+  const [products, categories, shipping, testimonials, testimonialsSection, hero] = await Promise.all([
     getProducts(),
     getCategories(),
     getShippingConfig(),
     getTestimonials(),
     getTestimonialsSection(),
+    getHero(),
   ])
 
   // The badge above the carousel: averaged over the testimonials actually shown.
@@ -31,7 +32,7 @@ export default async function Home() {
 
   return (
     <>
-      <Hero />
+      <Hero content={hero} />
 
       {/* Products Section */}
       <section className="section container-max">

@@ -5,6 +5,9 @@ import { DEFAULT_SHIPPING, type ShippingConfig } from '@/lib/checkout/shipping'
 import {
   DEFAULT_PRODUCT_CONTENT,
   DEFAULT_TESTIMONIALS_SECTION,
+  DEFAULT_HERO,
+  type HeroContent,
+  type HeroStat,
   type ProductContent,
   type TestimonialsSection,
 } from '@/lib/content'
@@ -12,6 +15,7 @@ import {
 const SHIPPING_KEY = 'shipping'
 const PRODUCT_CONTENT_KEY = 'product_content'
 const TESTIMONIALS_SECTION_KEY = 'testimonials_section'
+const HERO_KEY = 'hero'
 
 /**
  * Read the shipping config from the DB. Falls back to defaults if the
@@ -165,5 +169,90 @@ export async function setTestimonialsSection(
     return { ok: true }
   } catch {
     return { ok: false, error: 'Could not save the section' }
+  }
+}
+
+/**
+ * The homepage hero. Falls back to the shipped copy field by field, so a blank
+ * value in the row can never render an empty headline — the hero is the first
+ * thing on the site and there's nothing behind it to fall back to.
+ */
+export async function getHero(): Promise<HeroContent> {
+  try {
+    const sb = supabaseAdmin()
+    const { data, error } = await retryQuery('getHero', () =>
+      sb.from('app_settings').select('value').eq('key', HERO_KEY).maybeSingle(),
+    )
+    if (error) console.error('getHero failed:', error)
+    if (error || !data) return DEFAULT_HERO
+    return mergeHero((data.value ?? {}) as Partial<HeroContent>)
+  } catch {
+    return DEFAULT_HERO
+  }
+}
+
+/** Take each field from the saved row only when it's a non-empty string. */
+function mergeHero(v: Partial<HeroContent>): HeroContent {
+  const pick = (k: keyof Omit<HeroContent, 'stats'>) =>
+    typeof v[k] === 'string' && (v[k] as string).trim() ? (v[k] as string).trim() : DEFAULT_HERO[k]
+
+  const saved = Array.isArray(v.stats) ? v.stats : []
+  const stats = DEFAULT_HERO.stats.map((fallback, i) => {
+    const s = (saved[i] ?? {}) as Partial<HeroStat>
+    return {
+      value: typeof s.value === 'string' && s.value.trim() ? s.value.trim() : fallback.value,
+      label: typeof s.label === 'string' && s.label.trim() ? s.label.trim() : fallback.label,
+    }
+  }) as [HeroStat, HeroStat, HeroStat]
+
+  return {
+    badge: pick('badge'),
+    headingTop: pick('headingTop'),
+    headingBottom: pick('headingBottom'),
+    subtitle: pick('subtitle'),
+    subtitleAccent: pick('subtitleAccent'),
+    primaryLabel: pick('primaryLabel'),
+    primaryHref: pick('primaryHref'),
+    secondaryLabel: pick('secondaryLabel'),
+    secondaryHref: pick('secondaryHref'),
+    image: pick('image'),
+    stats,
+    socialCount: pick('socialCount'),
+    socialLabel: pick('socialLabel'),
+  }
+}
+
+/**
+ * A hero link has to be a path on this site or a full http(s) URL. Free text
+ * would otherwise sail through and leave a dead call-to-action on the homepage
+ * — and `javascript:` would be worse than dead.
+ */
+function badLink(href: string): string | null {
+  if (href.startsWith('/')) return null
+  if (/^https?:\/\//i.test(href)) return null
+  return `"${href}" must start with / or be a full http(s) address`
+}
+
+export async function setHero(
+  hero: HeroContent,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Merge first: blank fields mean "use the shipped copy", not "store empty".
+  const value = mergeHero(hero)
+  for (const href of [value.primaryHref, value.secondaryHref]) {
+    const problem = badLink(href)
+    if (problem) return { ok: false, error: problem }
+  }
+  try {
+    const sb = supabaseAdmin()
+    const { error } = await sb
+      .from('app_settings')
+      .upsert({ key: HERO_KEY, value }, { onConflict: 'key' })
+    if (error) {
+      console.error('setHero failed:', error)
+      return { ok: false, error: 'Could not save the hero (has settings.sql been run?)' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not save the hero' }
   }
 }

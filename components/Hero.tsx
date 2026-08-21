@@ -4,8 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Award, Truck, Shield, ShoppingBag, ArrowRight } from 'lucide-react';
+import { DEFAULT_HERO, type HeroContent } from '@/lib/content';
 
-export default function Hero() {
+// Fixed, in this order, to match the three stats. Deliberately not editable —
+// picking icons is a design decision, not copy.
+const STAT_ICONS = [Award, Truck, Shield];
+
+/**
+ * The homepage hero. Copy and background come from Admin → Homepage, resolved
+ * on the server and passed in, so the largest element on the page paints with
+ * its final content instead of swapping after a fetch.
+ */
+export default function Hero({ content = DEFAULT_HERO }: { content?: HeroContent }) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
@@ -21,7 +31,7 @@ export default function Hero() {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0" style={{ transform: 'translateY(0px)' }}>
           <Image
-            src="/lucy-photos/_F8A0531-Edit.jpg"
+            src={content.image}
             alt="Glamm Hair Extensions - Premium Collection"
             fill
             sizes="100vw"
@@ -46,79 +56,66 @@ export default function Hero() {
             style={{ background: 'rgba(246, 137, 97, 0.15)', border: '1px solid rgba(246, 137, 97, 0.4)' }}
           >
             <Star className="w-5 h-5 fill-current" style={{ color: '#febf6b' }} />
-            <span className="text-sm font-semibold text-white uppercase tracking-wider">100% Virgin Human Hair</span>
+            <span className="text-sm font-semibold text-white uppercase tracking-wider">{content.badge}</span>
           </div>
 
           {/* Main Heading */}
           <div className="space-y-6">
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight">
-              <span className="block text-white mb-3 drop-shadow-lg">Your Most Stunning</span>
+              <span className="block text-white mb-3 drop-shadow-lg">{content.headingTop}</span>
               <span
                 className="block drop-shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #f68961, #febf6b, #ffc9a7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
               >
-                Look Starts Here
+                {content.headingBottom}
               </span>
             </h1>
           </div>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-white/90 leading-relaxed font-light max-w-3xl mx-auto drop-shadow-md">
-            Your Natural Beauty, Upgraded.
+            {content.subtitle}
             <span className="block mt-3 font-medium drop-shadow-sm" style={{ color: '#ffc9a7' }}>
-              Luxurious • Natural • Effortlessly Stunning
+              {content.subtitleAccent}
             </span>
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap justify-center gap-5 pt-6">
             <Link
-              href="/shop"
+              href={content.primaryHref}
               className="group px-10 py-5 rounded-full text-white font-semibold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-3"
               style={{ background: 'linear-gradient(135deg, #f68961, #febf6b)' }}
             >
               <ShoppingBag className="w-6 h-6" />
-              <span>Shop Collection</span>
+              <span>{content.primaryLabel}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/about"
+              href={content.secondaryHref}
               className="group px-10 py-5 rounded-full border-2 border-white/40 text-white font-semibold text-lg hover:bg-white/15 hover:border-white/60 transition-all duration-300 flex items-center gap-3 backdrop-blur-md"
             >
-              <span>Discover More</span>
+              <span>{content.secondaryLabel}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
           {/* Trust Indicators */}
           <div className="grid grid-cols-3 gap-8 md:gap-16 pt-16 max-w-3xl mx-auto border-t border-white/20">
-            <div className="space-y-3">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-3 rounded-full backdrop-blur-sm" style={{ background: 'rgba(246, 137, 97, 0.15)', border: '1px solid rgba(246, 137, 97, 0.3)' }}>
-                  <Award className="w-7 h-7" style={{ color: '#febf6b' }} />
+            {content.stats.map((stat, i) => {
+              const Icon = STAT_ICONS[i]
+              return (
+                <div key={i} className="space-y-3">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-3 rounded-full backdrop-blur-sm" style={{ background: 'rgba(246, 137, 97, 0.15)', border: '1px solid rgba(246, 137, 97, 0.3)' }}>
+                      <Icon className="w-7 h-7" style={{ color: '#febf6b' }} />
+                    </div>
+                  </div>
+                  <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>{stat.value}</div>
+                  <div className="text-xs text-white/70 font-medium uppercase tracking-wide">{stat.label}</div>
                 </div>
-              </div>
-              <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>100%</div>
-              <div className="text-xs text-white/70 font-medium uppercase tracking-wide">Premium Quality</div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-3 rounded-full backdrop-blur-sm" style={{ background: 'rgba(246, 137, 97, 0.15)', border: '1px solid rgba(246, 137, 97, 0.3)' }}>
-                  <Truck className="w-7 h-7" style={{ color: '#febf6b' }} />
-                </div>
-              </div>
-              <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>Free</div>
-              <div className="text-xs text-white/70 font-medium uppercase tracking-wide">Shipping</div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-3 rounded-full backdrop-blur-sm" style={{ background: 'rgba(246, 137, 97, 0.15)', border: '1px solid rgba(246, 137, 97, 0.3)' }}>
-                  <Shield className="w-7 h-7" style={{ color: '#febf6b' }} />
-                </div>
-              </div>
-              <div className="text-4xl font-bold drop-shadow-md" style={{ color: '#f68961' }}>30 Day</div>
-              <div className="text-xs text-white/70 font-medium uppercase tracking-wide">Guarantee</div>
-            </div>
+              )
+            })}
           </div>
 
           {/* Customer Avatars */}
@@ -139,7 +136,7 @@ export default function Hero() {
                 ))}
               </div>
               <p className="text-sm text-white/80">
-                <span className="font-semibold text-white">5,000+</span> Happy Customers
+                <span className="font-semibold text-white">{content.socialCount}</span> {content.socialLabel}
               </p>
             </div>
           </div>
