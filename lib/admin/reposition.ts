@@ -44,6 +44,14 @@ export const TESTIMONIAL_ORDER: OrderedTable = {
   tiebreak: [{ column: 'id', ascending: true }],
 }
 
+/** Seeded in one statement like testimonials, so  ascending is the only
+ * tiebreak that preserves the seeded order. */
+export const FAQ_ORDER: OrderedTable = {
+  table: 'faqs',
+  rpc: 'reorder_faqs',
+  tiebreak: [{ column: 'id', ascending: true }],
+}
+
 /** Read a table in its current display order. */
 async function readOrder(sb: Sb, t: OrderedTable): Promise<{ id: number; sort_order: number }[]> {
   let query = sb.from(t.table).select('id, sort_order').order('sort_order', { ascending: true })

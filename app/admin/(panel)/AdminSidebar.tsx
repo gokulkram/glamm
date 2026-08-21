@@ -15,6 +15,7 @@ import {
   ExternalLink,
   LogOut,
   Home,
+  HelpCircle,
 } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
@@ -28,6 +29,7 @@ const NAV = [
   { href: '/admin/blog', label: 'Blog', icon: Newspaper },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/testimonials', label: 'Testimonials', icon: Quote },
+  { href: '/admin/faq', label: 'FAQ', icon: HelpCircle },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
