@@ -9,7 +9,7 @@ export default async function CategoriesPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Categories</h1>
-        <p className="text-text-muted text-sm">Add or remove product categories</p>
+        <p className="text-text-muted text-sm">Add, rename or remove product categories</p>
       </div>
       <CategoryManager categories={categories} />
     </div>

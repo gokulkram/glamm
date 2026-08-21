@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, Pencil, Check, X } from 'lucide-react'
 import type { AdminCategory } from '@/lib/products'
 
 export default function CategoryManager({ categories }: { categories: AdminCategory[] }) {
@@ -11,6 +11,9 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
   const [adding, setAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState('')
+  const [savingId, setSavingId] = useState<number | null>(null)
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +32,37 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
       return
     }
     setName('')
+    router.refresh()
+  }
+
+  const startEdit = (cat: AdminCategory) => {
+    setError(null)
+    setEditingId(cat.id)
+    setEditName(cat.name)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditName('')
+  }
+
+  const handleRename = async (cat: AdminCategory) => {
+    const name = editName.trim()
+    if (!name || name === cat.name) return cancelEdit()
+    setError(null)
+    setSavingId(cat.id)
+    const res = await fetch(`/api/admin/categories/${cat.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setSavingId(null)
+    if (!res.ok) {
+      setError(data.error || 'Could not rename category')
+      return
+    }
+    cancelEdit()
     router.refresh()
   }
 
@@ -72,21 +106,71 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
           <div className="p-6 text-center text-text-muted text-sm">No categories yet.</div>
         )}
         {categories.map((c) => (
-          <div key={c.id} className="flex items-center justify-between px-5 py-3">
-            <div>
-              <div className="font-medium">{c.name}</div>
-              <div className="text-xs text-text-muted">
-                {c.slug} · {c.count} product{c.count === 1 ? '' : 's'}
-              </div>
-            </div>
-            <button
-              onClick={() => handleDelete(c)}
-              disabled={deletingId === c.id}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-              aria-label={`Delete ${c.name}`}
-            >
-              {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            </button>
+          <div key={c.id} className="flex items-center justify-between gap-3 px-5 py-3">
+            {editingId === c.id ? (
+              <>
+                <div className="flex-1">
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRename(c)
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    disabled={savingId === c.id}
+                    className="w-full px-3 py-1.5 rounded-lg border border-border bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-50"
+                    aria-label={`Rename ${c.name}`}
+                  />
+                  <div className="text-xs text-text-muted mt-1">
+                    {c.slug} · renaming also moves {c.count} product{c.count === 1 ? '' : 's'}. The slug
+                    stays put — the shop links to it.
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRename(c)}
+                  disabled={savingId === c.id}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-green-700 hover:bg-green-50 disabled:opacity-50"
+                  aria-label={`Save ${c.name}`}
+                >
+                  {savingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  disabled={savingId === c.id}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-muted hover:bg-surface disabled:opacity-50"
+                  aria-label="Cancel"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{c.name}</div>
+                  <div className="text-xs text-text-muted">
+                    {c.slug} · {c.count} product{c.count === 1 ? '' : 's'}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => startEdit(c)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text-muted hover:bg-surface hover:text-accent"
+                    aria-label={`Rename ${c.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(c)}
+                    disabled={deletingId === c.id}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    aria-label={`Delete ${c.name}`}
+                  >
+                    {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
