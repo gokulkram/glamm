@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Star,
@@ -12,6 +13,7 @@ import {
   ChevronUp,
   ChevronDown,
   GripVertical,
+  ExternalLink,
 } from 'lucide-react'
 import type { Review, ReviewStatus } from '@/lib/reviews'
 import Pagination from '@/components/admin/Pagination'
@@ -37,10 +39,10 @@ type DropTarget = { id: number; placement: 'before' | 'after' }
 
 export default function ReviewsTable({
   reviews,
-  productTitles,
+  products,
 }: {
   reviews: Review[]
-  productTitles: Record<number, string>
+  products: Record<number, { title: string; slug: string }>
 }) {
   const router = useRouter()
   const [busyId, setBusyId] = useState<number | null>(null)
@@ -93,10 +95,10 @@ export default function ReviewsTable({
         r.author_name.toLowerCase().includes(q) ||
         (r.title ?? '').toLowerCase().includes(q) ||
         (r.body ?? '').toLowerCase().includes(q) ||
-        (productTitles[r.product_id] ?? '').toLowerCase().includes(q)
+        (products[r.product_id]?.title ?? '').toLowerCase().includes(q)
       )
     })
-  }, [items, search, status, productTitles])
+  }, [items, search, status, products])
 
   const paging = usePagination(filtered)
 
@@ -406,7 +408,22 @@ export default function ReviewsTable({
                     {r.title && <div className="font-medium">{r.title}</div>}
                     {r.body && <div className="text-text-muted">{r.body}</div>}
                   </td>
-                  <td className="px-4 py-3 text-text-muted">{productTitles[r.product_id] ?? `#${r.product_id}`}</td>
+                  <td className="px-4 py-3 text-text-muted">
+                    {products[r.product_id] ? (
+                      <Link
+                        href={`/products/${products[r.product_id].slug}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1.5 hover:text-accent hover:underline underline-offset-2"
+                      >
+                        {products[r.product_id].title}
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                      </Link>
+                    ) : (
+                      // A review whose product has since been deleted keeps its
+                      // id so the row is still identifiable.
+                      `#${r.product_id}`
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[r.status] ?? ''}`}

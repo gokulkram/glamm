@@ -6,8 +6,9 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminReviewsPage() {
   const [reviews, products] = await Promise.all([getAllReviews(), getAllProducts()])
-  const productTitles: Record<number, string> = {}
-  for (const p of products) productTitles[p.id] = p.title
+  // Slug travels with the title so each row can link through to the product.
+  const productsById: Record<number, { title: string; slug: string }> = {}
+  for (const p of products) productsById[p.id] = { title: p.title, slug: p.slug }
 
   return (
     <div>
@@ -17,7 +18,7 @@ export default async function AdminReviewsPage() {
           Approve customer reviews to publish them, and drag rows to set the order they appear in.
         </p>
       </div>
-      <ReviewsTable reviews={reviews} productTitles={productTitles} />
+      <ReviewsTable reviews={reviews} products={productsById} />
     </div>
   )
 }
