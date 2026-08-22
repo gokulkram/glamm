@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink, AlertTriangle, FileText } from 'lucide-react'
 import { getOrderDetail } from '@/lib/admin/data'
 import { getClaimForOrder } from '@/lib/claims'
 import { EmailLink, PhoneLink, paymentLabel } from '@/components/admin/ContactLinks'
@@ -69,7 +69,14 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           <h1 className="text-2xl font-bold">{order.order_number}</h1>
           <p className="text-text-muted text-sm">{date}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/invoice/${order.id}`}
+            target="_blank"
+            className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-accent"
+          >
+            <FileText className="h-4 w-4" /> Invoice
+          </Link>
           <Badge value={order.payment_status} />
           <Badge value={order.status} />
         </div>

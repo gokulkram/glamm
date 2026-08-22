@@ -6,13 +6,14 @@ import Footer from './Footer'
 
 /**
  * Renders the store Header/Footer on storefront pages, but NOT on /admin
- * pages, which have their own layout.
+ * pages, which have their own layout, or /invoice pages, which are a bare
+ * printable document.
  */
 export default function ConditionalChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname?.startsWith('/admin')
+  const isBare = pathname?.startsWith('/admin') || pathname?.startsWith('/invoice')
 
-  if (isAdmin) return <>{children}</>
+  if (isBare) return <>{children}</>
 
   return (
     <>

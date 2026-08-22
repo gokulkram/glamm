@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Check, Package, Truck, Home, Clock, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Check, Package, Truck, Home, Clock, AlertTriangle, FileText } from 'lucide-react'
 import { getMyOrderDetail } from '@/lib/account/data'
 import { getClaimForOrder, isClaimable } from '@/lib/claims'
 import ClaimStatus from '@/components/ClaimStatus'
@@ -50,9 +50,17 @@ export default async function MyOrderDetailPage({ params }: { params: { id: stri
           <h2 className="text-xl font-bold">{order.order_number}</h2>
           <p className="text-text-muted text-sm">Placed on {date}</p>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-text-muted">Total</div>
-          <div className="text-xl font-bold">${order.total.toFixed(2)}</div>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/invoice/${order.id}`}
+            className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-accent"
+          >
+            <FileText className="h-4 w-4" /> Invoice
+          </Link>
+          <div className="text-right">
+            <div className="text-sm text-text-muted">Total</div>
+            <div className="text-xl font-bold">${order.total.toFixed(2)}</div>
+          </div>
         </div>
       </div>
 

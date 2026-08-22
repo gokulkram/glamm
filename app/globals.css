@@ -292,3 +292,36 @@ body {
   background: var(--color-accent-dark);
 }
 
+
+/* ============================================================
+   Print — used by the invoice page (/invoice/[id]), where the
+   browser's print dialog doubles as "Save as PDF".
+   ============================================================ */
+@media print {
+  /* Print on white with black text whatever the screen styles do, and keep
+     backgrounds the browser would otherwise drop to save ink. */
+  body {
+    background: #fff;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Anything on screen only — the print button, site chrome. */
+  header,
+  footer,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+
+  /* A line item should not be split across two sheets. */
+  tr,
+  img {
+    break-inside: avoid;
+  }
+}
