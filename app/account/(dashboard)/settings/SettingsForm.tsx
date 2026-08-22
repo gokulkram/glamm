@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Check } from 'lucide-react'
 import type { MyProfile } from '@/lib/account/data'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { formatUsPhone } from '@/lib/phone'
 
 const field =
   'w-full px-3 py-2 rounded-lg border border-border bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/30'
@@ -16,7 +17,8 @@ export default function SettingsForm({ profile }: { profile: MyProfile }) {
   const [form, setForm] = useState({
     firstName: profile.firstName,
     lastName: profile.lastName,
-    phone: profile.phone,
+    // Saved numbers predate the formatter, so tidy them up on the way in.
+    phone: formatUsPhone(profile.phone),
   })
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -94,7 +96,15 @@ export default function SettingsForm({ profile }: { profile: MyProfile }) {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1.5">Phone</label>
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={field} />
+          <input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="(555) 123-4567"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: formatUsPhone(e.target.value) })}
+            className={field}
+          />
         </div>
         <button type="submit" disabled={savingProfile} className="btn btn-primary">
           {savingProfile ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save changes'}

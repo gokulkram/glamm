@@ -9,6 +9,7 @@ import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck, Tag, X }
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { computeShipping } from '@/lib/checkout/shipping'
+import { formatUsPhone } from '@/lib/phone'
 import { useCart } from '@/contexts/CartContext'
 import { useShipping } from '@/contexts/ShippingContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -319,7 +320,7 @@ export default function CheckoutPage() {
       ...prev,
       firstName: a.first_name ?? prev.firstName,
       lastName: a.last_name ?? prev.lastName,
-      phone: a.phone ?? prev.phone,
+      phone: a.phone ? formatUsPhone(a.phone) : prev.phone,
       address1: a.address1 ?? '',
       address2: a.address2 ?? '',
       city: a.city ?? '',
@@ -350,7 +351,8 @@ export default function CheckoutPage() {
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setCustomerInfo({ ...customerInfo, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setCustomerInfo({ ...customerInfo, [name]: name === 'phone' ? formatUsPhone(value) : value })
   }
 
   // Apply a discount code. With a card PaymentIntent we update its amount
@@ -544,7 +546,9 @@ export default function CheckoutPage() {
                 <input
                   type="tel"
                   name="phone"
-                  placeholder="Phone"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="Phone — (555) 123-4567"
                   value={customerInfo.phone}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
