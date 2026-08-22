@@ -1,8 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Check, Package, Truck, Home, Clock } from 'lucide-react'
+import { ArrowLeft, Check, Package, Truck, Home, Clock, AlertTriangle } from 'lucide-react'
 import { getMyOrderDetail } from '@/lib/account/data'
+import { getClaimForOrder, isClaimable } from '@/lib/claims'
+import ClaimStatus from '@/components/ClaimStatus'
+import ClaimForm from './ClaimForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +28,10 @@ function currentStepIndex(status: string) {
 export default async function MyOrderDetailPage({ params }: { params: { id: string } }) {
   const order = await getMyOrderDetail(params.id)
   if (!order) notFound()
+
+  // A report that's already been filed replaces the form, so the customer
+  // sees where it stands rather than a second empty form.
+  const claim = await getClaimForOrder(order.id)
 
   const date = new Date(order.created_at).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -129,6 +136,18 @@ export default async function MyOrderDetailPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+
+      {/* Damage report — nothing can arrive damaged before it ships, so the
+          form only appears once the order is on its way. */}
+      {(claim || isClaimable(order.status)) && (
+        <div className="card p-6 mt-6">
+          <h3 className="flex items-center gap-2 font-semibold mb-4">
+            <AlertTriangle className="h-4 w-4 text-text-muted" />
+            {claim ? 'Damage report' : 'Report damage'}
+          </h3>
+          {claim ? <ClaimStatus claim={claim} /> : <ClaimForm orderId={order.id} />}
+        </div>
+      )}
     </div>
   )
 }

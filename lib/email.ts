@@ -381,3 +381,70 @@ export async function sendContactMessage(data: ContactMessageData): Promise<bool
     return false
   }
 }
+
+type DamageClaimData = {
+  orderNumber: string
+  orderId: string
+  email: string
+  customerName?: string | null
+  description: string
+  photoCount: number
+}
+
+/**
+ * Tells support a customer has reported a damaged delivery. The photos stay
+ * in the private bucket — the email carries a link to the admin order page
+ * rather than the images themselves.
+ */
+export async function sendDamageClaimNotification(data: DamageClaimData): Promise<boolean> {
+  const transport = getTransport()
+  if (!transport) {
+    console.warn('SMTP not configured — skipping damage-claim notification')
+    return false
+  }
+  const to = notificationRecipients()
+  if (to.length === 0) {
+    console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping damage-claim notification')
+    return false
+  }
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+  const link = `${site}/admin/orders/${data.orderId}`
+  const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:24px;color:#fff;">
+      <div style="font-size:18px;font-weight:700;">📦 Damage reported</div>
+      <div style="opacity:.8;margin-top:2px;">${data.orderNumber} · ${data.photoCount} photo${
+        data.photoCount === 1 ? '' : 's'
+      } attached</div>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0 0 16px;font-size:14px;color:#2C2C2C;">
+        <b>Customer:</b> ${esc(data.customerName || '—')}<br/>
+        <b>Email:</b> ${esc(data.email)}
+      </p>
+      <div style="background:#FAF8F5;border:1px solid #EAE3D9;border-radius:12px;padding:16px;font-size:14px;color:#2C2C2C;white-space:pre-wrap;">${esc(
+        data.description,
+      )}</div>
+      <p style="color:#6B6B6B;font-size:13px;margin-top:20px;">
+        The photos are private — view them on the
+        ${link ? `<a href="${link}">admin order page</a>` : 'admin order page'}
+        and file the insurance claim from there.
+      </p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: FROM(),
+      to: to.join(','),
+      replyTo: data.email,
+      subject: `📦 Damage reported on ${data.orderNumber}`,
+      html: shell('Damage reported', body),
+    })
+    return true
+  } catch (err) {
+    console.error('sendDamageClaimNotification failed:', err)
+    return false
+  }
+}

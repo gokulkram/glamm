@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink } from 'lucide-react'
+import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink, AlertTriangle } from 'lucide-react'
 import { getOrderDetail } from '@/lib/admin/data'
+import { getClaimForOrder } from '@/lib/claims'
 import { EmailLink, PhoneLink, paymentLabel } from '@/components/admin/ContactLinks'
+import ClaimStatus from '@/components/ClaimStatus'
 import OrderManager from './OrderManager'
+import ClaimManager from './ClaimManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +50,9 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const order = await getOrderDetail(params.id)
   if (!order) notFound()
 
+  // Photos live in a private bucket; getClaimForOrder signs them for this render.
+  const claim = await getClaimForOrder(order.id)
+
   const customerName = `${order.first_name ?? ''} ${order.last_name ?? ''}`.trim() || '—'
   const date = new Date(order.created_at).toLocaleString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -71,49 +77,61 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Items */}
-        <div className="lg:col-span-2 card overflow-hidden">
-          <div className="px-5 py-3 border-b border-border font-semibold">
-            Items ({order.items.length})
-          </div>
-          <div className="divide-y divide-border">
-            {order.items.map((it, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
-                  {it.image && <Image src={it.image} alt={it.title} fill className="object-cover" unoptimized />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {it.slug ? (
-                    <Link
-                      href={`/products/${it.slug}`}
-                      target="_blank"
-                      className="font-medium truncate hover:text-accent hover:underline underline-offset-2 block"
-                    >
-                      {it.title}
-                    </Link>
-                  ) : (
-                    <div className="font-medium truncate">{it.title}</div>
-                  )}
-                  <div className="text-xs text-text-muted">
-                    {it.size ? `Size ${it.size} · ` : ''}Qty {it.quantity} × ${it.unit_price.toFixed(2)}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card overflow-hidden">
+            <div className="px-5 py-3 border-b border-border font-semibold">
+              Items ({order.items.length})
+            </div>
+            <div className="divide-y divide-border">
+              {order.items.map((it, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
+                    {it.image && <Image src={it.image} alt={it.title} fill className="object-cover" unoptimized />}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    {it.slug ? (
+                      <Link
+                        href={`/products/${it.slug}`}
+                        target="_blank"
+                        className="font-medium truncate hover:text-accent hover:underline underline-offset-2 block"
+                      >
+                        {it.title}
+                      </Link>
+                    ) : (
+                      <div className="font-medium truncate">{it.title}</div>
+                    )}
+                    <div className="text-xs text-text-muted">
+                      {it.size ? `Size ${it.size} · ` : ''}Qty {it.quantity} × ${it.unit_price.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="font-semibold whitespace-nowrap">${it.line_total.toFixed(2)}</div>
                 </div>
-                <div className="font-semibold whitespace-nowrap">${it.line_total.toFixed(2)}</div>
+              ))}
+            </div>
+            <div className="px-5 py-4 border-t border-border space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-text-muted">Subtotal</span><span>${order.subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">Shipping</span><span>{order.shipping ? `$${order.shipping.toFixed(2)}` : 'Free'}</span></div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-green-700">
+                  <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
+                  <span>−${order.discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border">
+                <span>Total</span><span>${order.total.toFixed(2)} {order.currency}</span>
               </div>
-            ))}
-          </div>
-          <div className="px-5 py-4 border-t border-border space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-text-muted">Subtotal</span><span>${order.subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-text-muted">Shipping</span><span>{order.shipping ? `$${order.shipping.toFixed(2)}` : 'Free'}</span></div>
-            {order.discount > 0 && (
-              <div className="flex justify-between text-green-700">
-                <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}</span>
-                <span>−${order.discount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-base font-bold pt-1.5 border-t border-border">
-              <span>Total</span><span>${order.total.toFixed(2)} {order.currency}</span>
             </div>
           </div>
+
+          {claim && (
+            <div className="card p-5">
+              <div className="flex items-center gap-2 font-semibold mb-3">
+                <AlertTriangle className="h-4 w-4 text-accent" /> Damage claim
+              </div>
+              <ClaimStatus claim={claim} />
+              <ClaimManager id={claim.id} status={claim.status} adminNote={claim.admin_note} />
+            </div>
+          )}
         </div>
 
         {/* Customer / shipping / payment */}
@@ -210,6 +228,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </Row>
             </dl>
           </div>
+
         </div>
       </div>
     </div>

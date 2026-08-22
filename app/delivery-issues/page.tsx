@@ -49,11 +49,17 @@ export default function DeliveryIssuesPage() {
       </p>
 
       <h2>Damaged Items</h2>
-      <p>If your order arrives damaged, keep all packaging and contact us immediately. Please provide:</p>
+      <p>If your order arrives damaged, keep all packaging and report it to us straight away. Please provide:</p>
       <ul>
         <li>Clear photos of the outer packaging</li>
         <li>Clear photos of the product damage</li>
       </ul>
+      <p>
+        The quickest way is to open the order in{' '}
+        <a href="/account/orders">your account</a> and use <strong>Report damage</strong> — you can describe what
+        happened and upload your photos there, and we will see it immediately. You can also email them to{' '}
+        <a href="mailto:support@glammhairextensions.com">support@glammhairextensions.com</a> if you prefer.
+      </p>
       <p>
         We will file an insurance claim on your behalf. Once approved, you may choose a replacement or refund. Do not
         discard anything until we confirm the claim is complete.
