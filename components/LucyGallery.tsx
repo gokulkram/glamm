@@ -75,7 +75,7 @@ export function LucyGallery() {
                 <div className="flex items-center gap-6 text-white">
                   <div className="flex items-center gap-2">
                     <Heart className="w-6 h-6 fill-white" />
-                    <span className="font-bold text-lg">{photo.likes.toLocaleString()}</span>
+                    <span className="font-bold text-lg">{photo.likes.toLocaleString('en-US')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MessageCircle className="w-6 h-6 fill-white" />
