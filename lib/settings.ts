@@ -6,6 +6,8 @@ import {
   DEFAULT_PRODUCT_CONTENT,
   DEFAULT_TESTIMONIALS_SECTION,
   DEFAULT_HERO,
+  DEFAULT_CONTACT,
+  type ContactContent,
   type HeroContent,
   type HeroStat,
   type ProductContent,
@@ -16,6 +18,7 @@ const SHIPPING_KEY = 'shipping'
 const PRODUCT_CONTENT_KEY = 'product_content'
 const TESTIMONIALS_SECTION_KEY = 'testimonials_section'
 const HERO_KEY = 'hero'
+const CONTACT_KEY = 'contact'
 
 /**
  * Read the shipping config from the DB. Falls back to defaults if the
@@ -254,5 +257,76 @@ export async function setHero(
     return { ok: true }
   } catch {
     return { ok: false, error: 'Could not save the hero' }
+  }
+}
+
+// ---------- Contact page ----------
+
+const CONTACT_TEXT_FIELDS = [
+  'eyebrow', 'headingTop', 'headingBottom', 'subtitle',
+  'emailLabel', 'email', 'phoneLabel', 'phone',
+  'addressLabel', 'addressLine1', 'addressLine2', 'mapsHref',
+  'hoursLabel', 'hours',
+  'socialHeading', 'socialBlurb',
+  'instagramHref', 'facebookHref', 'twitterHref',
+] as const
+
+/** Take each field from the saved row only when it is a non-empty string. */
+function mergeContact(v: Partial<ContactContent>): ContactContent {
+  const out = {} as ContactContent
+  for (const k of CONTACT_TEXT_FIELDS) {
+    const saved = v[k]
+    out[k] = typeof saved === 'string' && saved.trim() ? saved.trim() : DEFAULT_CONTACT[k]
+  }
+  return out
+}
+
+/**
+ * The contact page's copy and contact details. Falls back to the shipped
+ * values field by field, so a blank row can never leave the page without a
+ * way to reach the business.
+ */
+export async function getContact(): Promise<ContactContent> {
+  try {
+    const sb = supabaseAdmin()
+    const { data, error } = await retryQuery('getContact', () =>
+      sb.from('app_settings').select('value').eq('key', CONTACT_KEY).maybeSingle(),
+    )
+    if (error) console.error('getContact failed:', error)
+    if (error || !data) return DEFAULT_CONTACT
+    return mergeContact((data.value ?? {}) as Partial<ContactContent>)
+  } catch {
+    return DEFAULT_CONTACT
+  }
+}
+
+export async function setContact(
+  contact: ContactContent,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Merge first: blank fields mean "use the shipped copy", not "store empty".
+  const value = mergeContact(contact)
+
+  // Only the href fields are links. Email and phone are stored bare and get
+  // their mailto:/tel: prefix at render, so they must not go through badLink.
+  for (const href of [value.mapsHref, value.instagramHref, value.facebookHref, value.twitterHref]) {
+    const problem = badLink(href)
+    if (problem) return { ok: false, error: problem }
+  }
+  if (!value.email.includes('@')) {
+    return { ok: false, error: `"${value.email}" is not an email address` }
+  }
+
+  try {
+    const sb = supabaseAdmin()
+    const { error } = await sb
+      .from('app_settings')
+      .upsert({ key: CONTACT_KEY, value }, { onConflict: 'key' })
+    if (error) {
+      console.error('setContact failed:', error)
+      return { ok: false, error: 'Could not save the contact page (has settings.sql been run?)' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not save the contact page' }
   }
 }

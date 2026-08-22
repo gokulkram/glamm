@@ -180,3 +180,51 @@ export const DEFAULT_HERO: HeroContent = {
   socialCount: '5,000+',
   socialLabel: 'Happy Customers',
 }
+
+export type ContactContent = {
+  eyebrow: string
+  headingTop: string
+  headingBottom: string
+  subtitle: string
+  /** Email and phone are stored bare — mailto:/tel: are built at render. */
+  emailLabel: string
+  email: string
+  phoneLabel: string
+  phone: string
+  addressLabel: string
+  /** Two lines so the map card can stack them the way it always has. */
+  addressLine1: string
+  addressLine2: string
+  mapsHref: string
+  hoursLabel: string
+  hours: string
+  socialHeading: string
+  socialBlurb: string
+  instagramHref: string
+  facebookHref: string
+  twitterHref: string
+}
+
+/** What the contact page shipped with — also the fallback for blank input. */
+export const DEFAULT_CONTACT: ContactContent = {
+  eyebrow: 'Get In Touch',
+  headingTop: 'We’d Love to',
+  headingBottom: 'Hear From You',
+  subtitle:
+    'Have questions about our products? Need styling advice? Our team is here to help you find the perfect extensions for your needs.',
+  emailLabel: 'Email Us',
+  email: 'support@glammhairextensions.com',
+  phoneLabel: 'Call Us',
+  phone: '+1 (555) 123-4567',
+  addressLabel: 'Visit Us',
+  addressLine1: '123 Beauty Lane',
+  addressLine2: 'Los Angeles, CA 90001',
+  mapsHref: 'https://maps.google.com',
+  hoursLabel: 'Business Hours',
+  hours: 'Mon-Fri: 9AM-6PM PST',
+  socialHeading: 'Follow Us',
+  socialBlurb: 'Stay connected for styling tips, new arrivals, and exclusive offers!',
+  instagramHref: 'https://www.instagram.com/glammhair_extenions',
+  facebookHref: 'https://facebook.com',
+  twitterHref: 'https://twitter.com',
+}

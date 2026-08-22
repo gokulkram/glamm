@@ -16,6 +16,7 @@ import {
   LogOut,
   Home,
   HelpCircle,
+  Mail,
 } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
@@ -30,6 +31,7 @@ const NAV = [
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/testimonials', label: 'Testimonials', icon: Quote },
   { href: '/admin/faq', label: 'FAQ', icon: HelpCircle },
+  { href: '/admin/contact', label: 'Contact', icon: Mail },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
