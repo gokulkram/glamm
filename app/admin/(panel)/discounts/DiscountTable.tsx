@@ -16,7 +16,9 @@ function statusOf(c: Coupon): { label: string; cls: string } {
   return { label: 'Active', cls: 'bg-green-100 text-green-700' }
 }
 
-const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleDateString() : '—')
+// Locale is pinned: without it the server formats with Node's locale and the
+// browser with the visitor's, so the two disagree and hydration fails.
+const fmtDate = (s: string | null) => (s ? new Date(s).toLocaleDateString('en-US') : '—')
 
 export default function DiscountTable({ coupons }: { coupons: Coupon[] }) {
   const router = useRouter()
@@ -64,9 +66,15 @@ export default function DiscountTable({ coupons }: { coupons: Coupon[] }) {
                     {c.type === 'percent' ? `${c.value}% off` : `$${c.value.toFixed(2)} off`}
                   </td>
                   <td className="px-4 py-3 text-text-muted">{c.minSubtotal > 0 ? `$${c.minSubtotal.toFixed(2)}` : '—'}</td>
-                  <td className="px-4 py-3 text-text-muted tabular-nums">
-                    {c.timesRedeemed}
-                    {c.maxRedemptions != null ? ` / ${c.maxRedemptions}` : ''}
+                  <td className="px-4 py-3 tabular-nums">
+                    <Link
+                      href={`/admin/discounts/${c.id}/uses`}
+                      className="text-text-muted hover:text-accent hover:underline underline-offset-2"
+                      title="See who used this code"
+                    >
+                      {c.timesRedeemed}
+                      {c.maxRedemptions != null ? ` / ${c.maxRedemptions}` : ''}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-text-muted">{fmtDate(c.expiresAt)}</td>
                   <td className="px-4 py-3">

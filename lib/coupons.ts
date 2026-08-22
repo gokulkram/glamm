@@ -189,3 +189,72 @@ export async function getCouponById(id: string): Promise<Coupon | null> {
   }
   return data ? mapCoupon(data as CouponRow) : null
 }
+
+export type CouponRedemption = {
+  id: string
+  email: string
+  /** Null for a guest checkout — the email is always present either way. */
+  userId: string | null
+  orderId: string | null
+  orderNumber: string | null
+  /** `customers.id` for this email, so the row can link to their profile. */
+  customerId: string | null
+  customerName: string | null
+  createdAt: string
+}
+
+/**
+ * Who has used a coupon, newest first.
+ *
+ * Order numbers and customer names are looked up rather than joined: a
+ * redemption's order may have been deleted (the FK is `on delete set null`),
+ * and a guest checkout has no customer record at all.
+ */
+export async function listCouponRedemptions(couponId: string): Promise<CouponRedemption[]> {
+  const sb = supabaseAdmin()
+  const { data, error } = await sb
+    .from('coupon_redemptions')
+    .select('id, email, user_id, order_id, created_at')
+    .eq('coupon_id', couponId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('listCouponRedemptions failed:', error)
+    return []
+  }
+  const rows = data ?? []
+  if (rows.length === 0) return []
+
+  const orderIds = rows.map((r) => r.order_id).filter((id): id is string => Boolean(id))
+  const emails = Array.from(new Set(rows.map((r) => r.email.toLowerCase())))
+
+  // Two batched lookups rather than one per row.
+  const [{ data: orders }, { data: customers }] = await Promise.all([
+    orderIds.length
+      ? sb.from('orders').select('id, order_number').in('id', orderIds)
+      : Promise.resolve({ data: [] as { id: string; order_number: string }[] }),
+    sb.from('customers').select('id, email, first_name, last_name').in('email', emails),
+  ])
+
+  const orderById = new Map((orders ?? []).map((o) => [o.id, o.order_number]))
+  const customerByEmail = new Map(
+    (customers ?? []).map((c) => [
+      (c.email ?? '').toLowerCase(),
+      { id: c.id, name: `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() },
+    ]),
+  )
+
+  return rows.map((r) => {
+    const customer = customerByEmail.get(r.email.toLowerCase())
+    return {
+      id: r.id,
+      email: r.email,
+      userId: r.user_id,
+      orderId: r.order_id,
+      orderNumber: r.order_id ? (orderById.get(r.order_id) ?? null) : null,
+      customerId: customer?.id ?? null,
+      customerName: customer?.name || null,
+      createdAt: r.created_at,
+    }
+  })
+}
