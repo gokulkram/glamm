@@ -15,7 +15,7 @@ export default async function OrderConfirmationPage({
 
   // 3-D Secure return: finalise the order from the PaymentIntent (idempotent).
   if (!orderNumber && searchParams.payment_intent) {
-    const stripe = getStripe()
+    const stripe = await getStripe()
     if (stripe) {
       try {
         const pi = await stripe.paymentIntents.retrieve(searchParams.payment_intent)

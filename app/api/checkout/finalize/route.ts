@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 // the webhook does the same so the order lands even if the tab is closed.
 // Idempotent on the PaymentIntent id.
 export async function POST(req: NextRequest) {
-  if (!stripeConfigured()) {
+  if (!(await stripeConfigured())) {
     return NextResponse.json({ error: 'Card payments are not available right now' }, { status: 503 })
   }
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing payment reference' }, { status: 400 })
   }
 
-  const stripe = getStripe()!
+  const stripe = (await getStripe())!
   const pi = await stripe.paymentIntents.retrieve(body.paymentIntentId)
 
   if (pi.status !== 'succeeded') {

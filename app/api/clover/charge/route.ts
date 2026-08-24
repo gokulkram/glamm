@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { priceCart, type CartLineInput } from '@/lib/checkout/pricing'
 import { cloverCharge, cloverConfigured } from '@/lib/clover'
 import { createOrder } from '@/lib/orders'
+import { getPaymentGatewayConfig } from '@/lib/settings'
 
 export const runtime = 'nodejs'
 
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
   if (!body.source) {
     return NextResponse.json({ error: 'Missing payment details' }, { status: 400 })
   }
-  if (!cloverConfigured()) {
+  const { cloverEnabled } = await getPaymentGatewayConfig()
+  if (!(await cloverConfigured()) || !cloverEnabled) {
     return NextResponse.json({ error: 'Card payments are not available right now' }, { status: 503 })
   }
 

@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 // create-intent) — never re-accepted from the client. The validated discount is
 // stored in metadata so the order is finalised with exactly what was charged.
 export async function POST(req: NextRequest) {
-  if (!stripeConfigured()) {
+  if (!(await stripeConfigured())) {
     return NextResponse.json({ ok: false, message: 'Card payments are not available right now' }, { status: 503 })
   }
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, message: 'Missing payment reference' }, { status: 400 })
   }
 
-  const stripe = getStripe()!
+  const stripe = (await getStripe())!
   const pi = await stripe.paymentIntents.retrieve(body.paymentIntentId)
   const updatable = ['requires_payment_method', 'requires_confirmation', 'requires_action']
   if (!updatable.includes(pi.status)) {

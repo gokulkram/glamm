@@ -19,6 +19,14 @@ const PRODUCT_CONTENT_KEY = 'product_content'
 const TESTIMONIALS_SECTION_KEY = 'testimonials_section'
 const HERO_KEY = 'hero'
 const CONTACT_KEY = 'contact'
+const PAYMENT_KEY = 'payment'
+
+export type PaymentGatewayConfig = { stripeEnabled: boolean; cloverEnabled: boolean }
+// Both default on: a gateway is already available today whenever its env vars
+// are configured, so "enabled" must start true everywhere until an admin
+// deliberately turns one off — otherwise every existing store would silently
+// lose checkout options the moment this table gets a row.
+const DEFAULT_PAYMENT_GATEWAYS: PaymentGatewayConfig = { stripeEnabled: true, cloverEnabled: true }
 
 /**
  * Read the shipping config from the DB. Falls back to defaults if the
@@ -65,6 +73,49 @@ export async function setShippingConfig(
       .upsert({ key: SHIPPING_KEY, value: { freeThreshold, standardRate } }, { onConflict: 'key' })
     if (error) {
       console.error('setShippingConfig failed:', error)
+      return { ok: false, error: 'Could not save settings (has settings.sql been run?)' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not save settings' }
+  }
+}
+
+/**
+ * Which payment gateways checkout may use. Booleans only — never store keys
+ * or secrets here, app_settings has a public select RLS policy.
+ */
+export async function getPaymentGatewayConfig(): Promise<PaymentGatewayConfig> {
+  try {
+    const sb = supabaseAdmin()
+    const { data, error } = await retryQuery('getPaymentGatewayConfig', () =>
+      sb.from('app_settings').select('value').eq('key', PAYMENT_KEY).maybeSingle(),
+    )
+    if (error) console.error('getPaymentGatewayConfig failed:', error)
+    if (error || !data) return DEFAULT_PAYMENT_GATEWAYS
+    const v = (data.value ?? {}) as Partial<PaymentGatewayConfig>
+    return {
+      stripeEnabled: typeof v.stripeEnabled === 'boolean' ? v.stripeEnabled : DEFAULT_PAYMENT_GATEWAYS.stripeEnabled,
+      cloverEnabled: typeof v.cloverEnabled === 'boolean' ? v.cloverEnabled : DEFAULT_PAYMENT_GATEWAYS.cloverEnabled,
+    }
+  } catch {
+    return DEFAULT_PAYMENT_GATEWAYS
+  }
+}
+
+export async function setPaymentGatewayConfig(
+  cfg: PaymentGatewayConfig,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const sb = supabaseAdmin()
+    const { error } = await sb
+      .from('app_settings')
+      .upsert(
+        { key: PAYMENT_KEY, value: { stripeEnabled: Boolean(cfg.stripeEnabled), cloverEnabled: Boolean(cfg.cloverEnabled) } },
+        { onConflict: 'key' },
+      )
+    if (error) {
+      console.error('setPaymentGatewayConfig failed:', error)
       return { ok: false, error: 'Could not save settings (has settings.sql been run?)' }
     }
     return { ok: true }
@@ -265,7 +316,7 @@ export async function setHero(
 const CONTACT_TEXT_FIELDS = [
   'eyebrow', 'headingTop', 'headingBottom', 'subtitle',
   'emailLabel', 'email', 'phoneLabel', 'phone',
-  'addressLabel', 'addressLine1', 'addressLine2', 'mapsHref',
+  'addressLabel', 'addressLine1', 'addressLine2',
   'hoursLabel', 'hours',
   'socialHeading', 'socialBlurb',
   'instagramHref', 'facebookHref', 'twitterHref',
@@ -308,7 +359,7 @@ export async function setContact(
 
   // Only the href fields are links. Email and phone are stored bare and get
   // their mailto:/tel: prefix at render, so they must not go through badLink.
-  for (const href of [value.mapsHref, value.instagramHref, value.facebookHref, value.twitterHref]) {
+  for (const href of [value.instagramHref, value.facebookHref, value.twitterHref]) {
     const problem = badLink(href)
     if (problem) return { ok: false, error: problem }
   }

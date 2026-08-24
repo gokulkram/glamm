@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Script from 'next/script'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, ArrowRight, CreditCard, Lock, Loader2, UserCheck, Tag, X } from 'lucide-react'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { computeShipping } from '@/lib/checkout/shipping'
 import { formatUsPhone } from '@/lib/phone'
@@ -15,13 +15,8 @@ import { useShipping } from '@/contexts/ShippingContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { Address } from '@/lib/account/data'
 
-const pubKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const stripePromise = pubKey ? loadStripe(pubKey) : null
-
-const cloverPublicToken = process.env.NEXT_PUBLIC_CLOVER_PUBLIC_TOKEN
-const cloverMerchantId = process.env.NEXT_PUBLIC_CLOVER_MERCHANT_ID
-// Sandbox SDK — swap to https://checkout.clover.com/sdk.js for production.
-const CLOVER_SDK_URL = 'https://checkout.sandbox.dev.clover.com/sdk.js'
+const CLOVER_SANDBOX_SDK_URL = 'https://checkout.sandbox.dev.clover.com/sdk.js'
+const CLOVER_PRODUCTION_SDK_URL = 'https://checkout.clover.com/sdk.js'
 
 type CloverElement = { mount: (selector: string) => void }
 type CloverInstance = {
@@ -133,6 +128,9 @@ function CloverCardForm({
   isProcessing,
   onError,
   onProcessingChange,
+  publicToken,
+  merchantId,
+  sdkUrl,
 }: {
   customerInfo: CustomerInfo
   items: { product_id: number; size: string; quantity: number }[]
@@ -140,6 +138,9 @@ function CloverCardForm({
   isProcessing: boolean
   onError: (msg: string | null) => void
   onProcessingChange: (v: boolean) => void
+  publicToken: string | null
+  merchantId: string | null
+  sdkUrl: string
 }) {
   const router = useRouter()
   const { clearCart } = useCart()
@@ -149,9 +150,9 @@ function CloverCardForm({
   const mountedRef = useRef(false)
 
   useEffect(() => {
-    if (!sdkReady || mountedRef.current || !window.Clover || !cloverPublicToken || !cloverMerchantId) return
+    if (!sdkReady || mountedRef.current || !window.Clover || !publicToken || !merchantId) return
     mountedRef.current = true
-    const clover = new window.Clover(cloverPublicToken, { merchantId: cloverMerchantId })
+    const clover = new window.Clover(publicToken, { merchantId })
     cloverRef.current = clover
     const elements = clover.elements()
     const styles = { input: { fontSize: '16px' } }
@@ -160,7 +161,7 @@ function CloverCardForm({
     elements.create('CARD_CVV', styles).mount('#clover-card-cvv')
     elements.create('CARD_POSTAL_CODE', styles).mount('#clover-card-postal')
     setElementsReady(true)
-  }, [sdkReady])
+  }, [sdkReady, publicToken, merchantId])
 
   const pay = async () => {
     const required = ['email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip']
@@ -198,7 +199,7 @@ function CloverCardForm({
     router.push(`/order-confirmation?order=${encodeURIComponent(data.orderNumber)}`)
   }
 
-  if (!cloverPublicToken || !cloverMerchantId) {
+  if (!publicToken || !merchantId) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
         Card payments via Clover are not available right now.
@@ -208,7 +209,7 @@ function CloverCardForm({
 
   return (
     <div className="mb-4">
-      <Script src={CLOVER_SDK_URL} strategy="afterInteractive" onLoad={() => setSdkReady(true)} />
+      <Script src={sdkUrl} strategy="afterInteractive" onLoad={() => setSdkReady(true)} />
       <div className="grid gap-3">
         <div id="clover-card-number" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
         <div className="grid grid-cols-3 gap-3">
@@ -234,7 +235,32 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'clover'>('stripe')
-  const cloverAvailable = Boolean(cloverPublicToken && cloverMerchantId)
+  // Starts false (fail closed) until the admin's enabled/disabled setting is
+  // confirmed, same pattern cardAvailable already uses for Stripe.
+  const [cloverEnabled, setCloverEnabled] = useState(false)
+  // Public token/merchant ID/mode now live in the DB (admin-editable), not
+  // env vars — fetched alongside the enabled flag so they can't render stale.
+  const [cloverPublicToken, setCloverPublicToken] = useState<string | null>(null)
+  const [cloverMerchantId, setCloverMerchantId] = useState<string | null>(null)
+  const [cloverSdkUrl, setCloverSdkUrl] = useState(CLOVER_SANDBOX_SDK_URL)
+  const cloverAvailable = Boolean(cloverPublicToken && cloverMerchantId) && cloverEnabled
+  // Stripe's publishable key is likewise DB-editable now, so loadStripe() can
+  // only run once it's fetched — a module-level const can't reflect a saved
+  // credential.
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null)
+
+  useEffect(() => {
+    fetch('/api/payment-config')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        setCloverEnabled(Boolean(d?.cloverEnabled))
+        setCloverPublicToken(d?.cloverPublicToken ?? null)
+        setCloverMerchantId(d?.cloverMerchantId ?? null)
+        setCloverSdkUrl(d?.cloverSandbox === false ? CLOVER_PRODUCTION_SDK_URL : CLOVER_SANDBOX_SDK_URL)
+        if (d?.stripePublishableKey) setStripePromise(loadStripe(d.stripePublishableKey))
+      })
+      .catch(() => {})
+  }, [])
 
   // Customer info state
   const [customerInfo, setCustomerInfo] = useState({
@@ -674,6 +700,9 @@ export default function CheckoutPage() {
                       isProcessing={isProcessing}
                       onError={setError}
                       onProcessingChange={setIsProcessing}
+                      publicToken={cloverPublicToken}
+                      merchantId={cloverMerchantId}
+                      sdkUrl={cloverSdkUrl}
                     />
                   )}
                 </>

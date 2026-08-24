@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 // Stripe webhook — the authoritative order finaliser. Verifies the signature,
 // then creates the order on payment_intent.succeeded (idempotent on the PI id).
 export async function POST(req: NextRequest) {
-  const stripe = getStripe()
+  const stripe = await getStripe()
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   if (!stripe || !secret) {
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })

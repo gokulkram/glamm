@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { priceCart, type CartLineInput } from '@/lib/checkout/pricing'
 import { getStripe, stripeConfigured } from '@/lib/stripe'
+import { getPaymentGatewayConfig } from '@/lib/settings'
 
 export const runtime = 'nodejs'
 
@@ -9,7 +10,8 @@ export const runtime = 'nodejs'
 // from DB prices; the cart travels in metadata so the order can be built on
 // success (return page or webhook).
 export async function POST(req: NextRequest) {
-  if (!stripeConfigured()) {
+  const { stripeEnabled } = await getPaymentGatewayConfig()
+  if (!(await stripeConfigured()) || !stripeEnabled) {
     return NextResponse.json({ error: 'Card payments are not available right now' }, { status: 503 })
   }
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many items to check out at once' }, { status: 400 })
   }
 
-  const stripe = getStripe()!
+  const stripe = (await getStripe())!
   const intent = await stripe.paymentIntents.create({
     amount: Math.round(cart.total * 100),
     currency: 'usd',

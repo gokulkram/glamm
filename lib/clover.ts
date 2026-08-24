@@ -5,18 +5,42 @@
  * resulting single-use source token (clv_...).
  */
 
+import { getStoredCredentials } from '@/lib/paymentCredentials'
+
 type CloverConfig = { merchantId: string; privateToken: string; isSandbox: boolean }
 
-function cloverConfig(): CloverConfig | null {
-  const merchantId = process.env.CLOVER_MERCHANT_ID
-  const privateToken = process.env.CLOVER_PRIVATE_TOKEN
+// Admin-saved credentials (payment_credentials table) win over env vars, so
+// the admin UI's edits actually take effect without a redeploy. Re-read on
+// every call rather than caching — a saved credential can change at runtime.
+async function cloverConfig(): Promise<CloverConfig | null> {
+  const stored = await getStoredCredentials('clover')
+  const merchantId = stored.merchantId || process.env.CLOVER_MERCHANT_ID
+  const privateToken = stored.privateToken || process.env.CLOVER_PRIVATE_TOKEN
   if (!merchantId || !privateToken) return null
-  return { merchantId, privateToken, isSandbox: process.env.CLOVER_MODE !== 'production' }
+  return { merchantId, privateToken, isSandbox: (stored.mode || process.env.CLOVER_MODE) !== 'production' }
 }
 
 /** Whether Clover credentials are present. If false, this gateway is unavailable. */
-export function cloverConfigured(): boolean {
-  return cloverConfig() !== null
+export async function cloverConfigured(): Promise<boolean> {
+  return (await cloverConfig()) !== null
+}
+
+/**
+ * Non-secret Clover values the checkout page needs client-side to mount
+ * Clover.js and tokenise a card. Public token and merchant ID are meant to
+ * reach the browser (they were literally NEXT_PUBLIC_* env vars before this
+ * table existed) — only the private token is confidential.
+ */
+export async function cloverPublicCredentials(): Promise<{
+  publicToken: string | null
+  merchantId: string | null
+  isSandbox: boolean
+}> {
+  const stored = await getStoredCredentials('clover')
+  const publicToken = stored.publicToken || process.env.NEXT_PUBLIC_CLOVER_PUBLIC_TOKEN || null
+  const merchantId = stored.merchantId || process.env.NEXT_PUBLIC_CLOVER_MERCHANT_ID || null
+  const isSandbox = (stored.mode || process.env.CLOVER_MODE) !== 'production'
+  return { publicToken, merchantId, isSandbox }
 }
 
 function chargesEndpoint(isSandbox: boolean): string {
@@ -38,7 +62,7 @@ export type ChargeResult =
   | { ok: false; error: string; code?: string; raw?: unknown }
 
 export async function cloverCharge(params: ChargeParams): Promise<ChargeResult> {
-  const cfg = cloverConfig()
+  const cfg = await cloverConfig()
   if (!cfg) return { ok: false, error: 'Payment configuration missing' }
   if (!params.source) return { ok: false, error: 'Missing payment token' }
 

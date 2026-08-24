@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 // the charge, so the order can be built on success even after a 3-D Secure
 // redirect (when the React state is gone).
 export async function POST(req: NextRequest) {
-  if (!stripeConfigured()) {
+  if (!(await stripeConfigured())) {
     return NextResponse.json({ error: 'Card payments are not available right now' }, { status: 503 })
   }
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Please fill in all required fields' }, { status: 400 })
   }
 
-  const stripe = getStripe()!
+  const stripe = (await getStripe())!
   await stripe.paymentIntents.update(body.paymentIntentId, {
     receipt_email: c.email,
     // Merges with the existing metadata (cart, userId).

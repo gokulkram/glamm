@@ -1,19 +1,34 @@
 import Stripe from 'stripe'
+import { getStoredCredentials } from '@/lib/paymentCredentials'
 
 /**
- * Server-only Stripe client. Reads STRIPE_SECRET_KEY at call time so the app
- * still boots (and the manual checkout keeps working) before keys are set.
+ * Server-only Stripe client. Admin-saved credentials (payment_credentials
+ * table) win over env vars, so the admin UI's edits take effect without a
+ * redeploy; falls back to STRIPE_SECRET_KEY when nothing's been saved, so the
+ * app still boots before keys are set anywhere.
+ *
+ * No client caching (there used to be a lazy singleton) — a saved key can
+ * change at runtime, and caching across calls would keep serving a stale
+ * client after a credentials save. Stripe SDK construction is cheap.
  */
-let _stripe: Stripe | null = null
-
-export function getStripe(): Stripe | null {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) return null
-  if (!_stripe) _stripe = new Stripe(key)
-  return _stripe
+async function resolveStripeSecretKey(): Promise<string | undefined> {
+  const stored = await getStoredCredentials('stripe')
+  return stored.secretKey || process.env.STRIPE_SECRET_KEY
 }
 
-/** True when the secret key is configured (card payments available). */
-export function stripeConfigured(): boolean {
-  return !!process.env.STRIPE_SECRET_KEY
+export async function getStripe(): Promise<Stripe | null> {
+  const key = await resolveStripeSecretKey()
+  if (!key) return null
+  return new Stripe(key)
+}
+
+/** True when a secret key is configured, saved or env (card payments available). */
+export async function stripeConfigured(): Promise<boolean> {
+  return !!(await resolveStripeSecretKey())
+}
+
+/** Publishable key for the browser — not secret, safe to expose via a public API. */
+export async function stripePublishableKey(): Promise<string | undefined> {
+  const stored = await getStoredCredentials('stripe')
+  return stored.publishableKey || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 }
