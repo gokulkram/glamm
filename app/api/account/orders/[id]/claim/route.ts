@@ -5,13 +5,24 @@ import { sendDamageClaimNotification } from '@/lib/email'
 import {
   CLAIM_BUCKET,
   CLAIM_MAX_DESCRIPTION,
+  CLAIM_MAX_DOCUMENTS,
   CLAIM_MAX_PHOTOS,
   isClaimable,
 } from '@/lib/claims'
 
 export const runtime = 'nodejs'
 
-type ClaimInput = { description?: unknown; photo_paths?: unknown }
+type ClaimInput = { description?: unknown; photo_paths?: unknown; document_paths?: unknown }
+
+/** Paths come back from our own upload route, but arrive via the client, so
+ * only accept ones inside this order's folder — otherwise a customer could
+ * attach another order's files to their claim. */
+function ownPaths(raw: unknown, orderId: string): string[] {
+  return (Array.isArray(raw) ? raw : [])
+    .filter((p): p is string => typeof p === 'string')
+    .map((p) => p.trim())
+    .filter((p) => p.startsWith(`${orderId}/`) && !p.includes('..'))
+}
 
 // Files the customer's damage report against an order they own.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -39,20 +50,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     )
   }
 
-  const raw = Array.isArray(input.photo_paths) ? input.photo_paths : []
-  // Paths come back from our own upload route, but they arrive via the client,
-  // so only accept ones inside this order's folder — otherwise a customer
-  // could attach another order's photos to their claim.
-  const photo_paths = raw
-    .filter((p): p is string => typeof p === 'string')
-    .map((p) => p.trim())
-    .filter((p) => p.startsWith(`${order.id}/`) && !p.includes('..'))
+  const photo_paths = ownPaths(input.photo_paths, order.id)
+  const document_paths = ownPaths(input.document_paths, order.id)
 
   if (photo_paths.length === 0) {
     return NextResponse.json({ error: 'Please attach at least one photo of the damage.' }, { status: 400 })
   }
   if (photo_paths.length > CLAIM_MAX_PHOTOS) {
     return NextResponse.json({ error: `Please attach no more than ${CLAIM_MAX_PHOTOS} photos.` }, { status: 400 })
+  }
+  if (document_paths.length > CLAIM_MAX_DOCUMENTS) {
+    return NextResponse.json(
+      { error: `Please attach no more than ${CLAIM_MAX_DOCUMENTS} documents.` },
+      { status: 400 },
+    )
   }
 
   const user = await getCurrentUser()
@@ -66,6 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       kind: 'damaged',
       description,
       photo_paths,
+      document_paths,
     })
     .select('id')
     .single()
@@ -92,6 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     customerName: `${order.first_name ?? ''} ${order.last_name ?? ''}`.trim(),
     description,
     photoCount: photo_paths.length,
+    documentCount: document_paths.length,
   })
 
   return NextResponse.json({ success: true, id: data.id })

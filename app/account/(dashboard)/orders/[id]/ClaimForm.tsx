@@ -2,26 +2,32 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Loader2, Plus, Upload, X } from 'lucide-react'
+import { AlertTriangle, FileText, Loader2, Plus, Upload, X } from 'lucide-react'
 
 // Mirrors lib/claims.ts and the upload route. The server re-validates — these
 // exist so an obviously-wrong file fails instantly instead of after a round
 // trip, and must be kept in step with the route.
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 // 5 MB
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024 // 5 MB
 const MAX_PHOTOS = 6
+
+const DOCUMENT_TYPES = ['application/pdf']
+const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+const MAX_DOCUMENTS = 3
+
 const MAX_DESCRIPTION = 2000
 
 const field =
   'w-full px-3 py-2 rounded-lg border border-border bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/30'
 
-/** An uploaded photo: `path` is what we store, `url` is signed for preview. */
-type Photo = { path: string; url: string | null }
+/** An uploaded file: `path` is what we store, `url` is signed for preview. */
+type UploadedFile = { path: string; url: string | null }
 
 /**
- * Lets a customer report a damaged delivery with photos.
+ * Lets a customer report a damaged delivery with photos and, optionally, a
+ * supporting document (e.g. a receipt).
  *
- * Photos upload as they are picked and the claim row is created on submit, so
+ * Files upload as they are picked and the claim row is created on submit, so
  * an abandoned form can leave a file or two behind in the private bucket.
  * That is deliberate: staging files client-side would mean re-implementing
  * the upload for no benefit a customer would notice.
@@ -29,32 +35,54 @@ type Photo = { path: string; url: string | null }
 export default function ClaimForm({ orderId }: { orderId: string }) {
   const router = useRouter()
   const [description, setDescription] = useState('')
-  const [photos, setPhotos] = useState<Photo[]>([])
-  const [uploading, setUploading] = useState(false)
+  const [photos, setPhotos] = useState<UploadedFile[]>([])
+  const [documents, setDocuments] = useState<UploadedFile[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [uploadingDocuments, setUploadingDocuments] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [draggingDocs, setDraggingDocs] = useState(false)
 
   // dragenter/dragleave fire for every child too, so a plain boolean flickers
   // as the pointer crosses a thumbnail. Counting depth doesn't.
   const dragDepth = useRef(0)
+  const dragDepthDocs = useRef(0)
   // setUploading is async, so two drops landing in the same tick would both
   // see uploading === false and race. A ref settles it synchronously.
-  const uploadingRef = useRef(false)
+  const uploadingPhotosRef = useRef(false)
+  const uploadingDocumentsRef = useRef(false)
 
-  const full = photos.length >= MAX_PHOTOS
+  const photosFull = photos.length >= MAX_PHOTOS
+  const documentsFull = documents.length >= MAX_DOCUMENTS
 
-  const uploadFiles = async (files: File[]) => {
+  /** Shared upload path for both photos and documents — only the limits differ. */
+  const uploadFiles = async (
+    files: File[],
+    opts: {
+      current: UploadedFile[]
+      setCurrent: React.Dispatch<React.SetStateAction<UploadedFile[]>>
+      uploadingRef: React.MutableRefObject<boolean>
+      setUploading: (v: boolean) => void
+      acceptedTypes: string[]
+      maxBytes: number
+      maxCount: number
+      noun: string // "photo" | "document", for messages
+      typeHint: string // e.g. "JPG, PNG, WebP or GIF" / "PDF"
+    },
+  ) => {
+    const { current, setCurrent, uploadingRef, setUploading, acceptedTypes, maxBytes, maxCount, noun, typeHint } =
+      opts
     if (uploadingRef.current || !files.length) return
-    const room = MAX_PHOTOS - photos.length
+    const room = maxCount - current.length
     if (room <= 0) {
-      setError(`You can attach up to ${MAX_PHOTOS} photos.`)
+      setError(`You can attach up to ${maxCount} ${noun}${maxCount === 1 ? '' : 's'}.`)
       return
     }
     // Take what fits rather than rejecting the whole drop, and say so.
     const batch = files.slice(0, room)
     if (files.length > room) {
-      setError(`Only the first ${room} photo${room === 1 ? '' : 's'} were added — ${MAX_PHOTOS} is the limit.`)
+      setError(`Only the first ${room} ${noun}${room === 1 ? '' : 's'} were added — ${maxCount} is the limit.`)
     } else {
       setError(null)
     }
@@ -63,12 +91,12 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
     setUploading(true)
     try {
       for (const file of batch) {
-        if (!ACCEPTED_TYPES.includes(file.type)) {
-          setError('Unsupported file type. Use JPG, PNG, WebP or GIF.')
+        if (!acceptedTypes.includes(file.type)) {
+          setError(`Unsupported file type. Use ${typeHint}.`)
           continue
         }
-        if (file.size > MAX_UPLOAD_BYTES) {
-          setError(`That photo is too large (max 5 MB).`)
+        if (file.size > maxBytes) {
+          setError(`That ${noun} is too large (max ${Math.round(maxBytes / (1024 * 1024))} MB).`)
           continue
         }
         const fd = new FormData()
@@ -80,7 +108,7 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
             setError(data.error || 'Upload failed')
             continue
           }
-          setPhotos((prev) => [...prev, { path: data.path, url: data.url }])
+          setCurrent((prev) => [...prev, { path: data.path, url: data.url }])
         } catch {
           // Without this the spinner would spin for good on a dropped connection.
           setError('Upload failed — check your connection and try again.')
@@ -92,18 +120,50 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
     }
   }
 
-  const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadPhotos = (files: File[]) =>
+    uploadFiles(files, {
+      current: photos,
+      setCurrent: setPhotos,
+      uploadingRef: uploadingPhotosRef,
+      setUploading: setUploadingPhotos,
+      acceptedTypes: PHOTO_TYPES,
+      maxBytes: PHOTO_MAX_BYTES,
+      maxCount: MAX_PHOTOS,
+      noun: 'photo',
+      typeHint: 'JPG, PNG, WebP or GIF',
+    })
+
+  const uploadDocuments = (files: File[]) =>
+    uploadFiles(files, {
+      current: documents,
+      setCurrent: setDocuments,
+      uploadingRef: uploadingDocumentsRef,
+      setUploading: setUploadingDocuments,
+      acceptedTypes: DOCUMENT_TYPES,
+      maxBytes: DOCUMENT_MAX_BYTES,
+      maxCount: MAX_DOCUMENTS,
+      noun: 'document',
+      typeHint: 'PDF',
+    })
+
+  const handlePickPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
     e.target.value = '' // let the same file be re-selected later
-    if (files.length) uploadFiles(files)
+    if (files.length) uploadPhotos(files)
   }
 
-  const removePhoto = async (photo: Photo) => {
-    setPhotos((prev) => prev.filter((p) => p.path !== photo.path))
+  const handlePickDocuments = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (files.length) uploadDocuments(files)
+  }
+
+  const removeFile = async (file: UploadedFile, setCurrent: React.Dispatch<React.SetStateAction<UploadedFile[]>>) => {
+    setCurrent((prev) => prev.filter((p) => p.path !== file.path))
     // Best effort — the claim isn't filed yet, so a failure here only leaves an
     // unreferenced file behind and shouldn't interrupt the customer.
     try {
-      await fetch(`/api/account/orders/${orderId}/claim?path=${encodeURIComponent(photo.path)}`, {
+      await fetch(`/api/account/orders/${orderId}/claim?path=${encodeURIComponent(file.path)}`, {
         method: 'DELETE',
       })
     } catch {
@@ -114,37 +174,62 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
   // Only files are droppable here.
   const hasFiles = (e: React.DragEvent) => e.dataTransfer.types.includes('Files')
 
-  const onDragEnter = (e: React.DragEvent) => {
-    if (uploading || full || !hasFiles(e)) return
-    e.preventDefault()
-    dragDepth.current += 1
-    setDragging(true)
-  }
-
-  const onDragLeave = (e: React.DragEvent) => {
-    if (!dragging) return
-    e.preventDefault()
-    dragDepth.current -= 1
-    if (dragDepth.current <= 0) {
-      dragDepth.current = 0
-      setDragging(false)
+  /** Shared drag-and-drop wiring for a dropzone — only the upload target differs. */
+  const makeDragHandlers = (opts: {
+    disabled: boolean
+    depthRef: React.MutableRefObject<number>
+    dragging: boolean
+    setDragging: (v: boolean) => void
+    upload: (files: File[]) => void
+  }) => {
+    const { disabled, depthRef, dragging, setDragging, upload } = opts
+    return {
+      onDragEnter: (e: React.DragEvent) => {
+        if (disabled || !hasFiles(e)) return
+        e.preventDefault()
+        depthRef.current += 1
+        setDragging(true)
+      },
+      onDragLeave: (e: React.DragEvent) => {
+        if (!dragging) return
+        e.preventDefault()
+        depthRef.current -= 1
+        if (depthRef.current <= 0) {
+          depthRef.current = 0
+          setDragging(false)
+        }
+      },
+      onDragOver: (e: React.DragEvent) => {
+        if (disabled || !hasFiles(e)) return
+        e.preventDefault() // without this, onDrop never fires
+        e.dataTransfer.dropEffect = 'copy'
+      },
+      onDrop: (e: React.DragEvent) => {
+        if (!hasFiles(e)) return
+        e.preventDefault()
+        depthRef.current = 0
+        setDragging(false)
+        const files = Array.from(e.dataTransfer.files ?? [])
+        if (files.length) upload(files)
+      },
     }
   }
 
-  const onDragOver = (e: React.DragEvent) => {
-    if (uploading || full || !hasFiles(e)) return
-    e.preventDefault() // without this, onDrop never fires
-    e.dataTransfer.dropEffect = 'copy'
-  }
+  const photoDrag = makeDragHandlers({
+    disabled: uploadingPhotos || photosFull,
+    depthRef: dragDepth,
+    dragging,
+    setDragging,
+    upload: uploadPhotos,
+  })
 
-  const onDrop = (e: React.DragEvent) => {
-    if (!hasFiles(e)) return
-    e.preventDefault()
-    dragDepth.current = 0
-    setDragging(false)
-    const files = Array.from(e.dataTransfer.files ?? [])
-    if (files.length) uploadFiles(files)
-  }
+  const documentDrag = makeDragHandlers({
+    disabled: uploadingDocuments || documentsFull,
+    depthRef: dragDepthDocs,
+    dragging: draggingDocs,
+    setDragging: setDraggingDocs,
+    upload: uploadDocuments,
+  })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -162,7 +247,11 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
       const res = await fetch(`/api/account/orders/${orderId}/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description.trim(), photo_paths: photos.map((p) => p.path) }),
+        body: JSON.stringify({
+          description: description.trim(),
+          photo_paths: photos.map((p) => p.path),
+          document_paths: documents.map((d) => d.path),
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -201,10 +290,7 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
       <div>
         <span className="block text-sm font-medium mb-1.5">Photos</span>
         <div
-          onDragEnter={onDragEnter}
-          onDragLeave={onDragLeave}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
+          {...photoDrag}
           className={`rounded-lg border border-dashed p-4 transition-colors ${
             dragging ? 'border-accent bg-accent/5' : 'border-border'
           }`}
@@ -221,7 +307,7 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
                   />
                   <button
                     type="button"
-                    onClick={() => removePhoto(p)}
+                    onClick={() => removeFile(p, setPhotos)}
                     aria-label="Remove photo"
                     className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-white text-text-muted shadow-sm hover:text-red-600"
                   >
@@ -234,33 +320,98 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
 
           <label
             className={`btn btn-secondary inline-flex ${
-              uploading || full ? 'pointer-events-none opacity-70' : 'cursor-pointer'
+              uploadingPhotos || photosFull ? 'pointer-events-none opacity-70' : 'cursor-pointer'
             }`}
           >
-            {uploading ? (
+            {uploadingPhotos ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : photos.length ? (
               <Plus className="h-4 w-4" />
             ) : (
               <Upload className="h-4 w-4" />
             )}
-            {uploading ? 'Uploading…' : photos.length ? 'Add another photo' : 'Add photos'}
+            {uploadingPhotos ? 'Uploading…' : photos.length ? 'Add another photo' : 'Add photos'}
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               multiple
               className="hidden"
-              onChange={handlePick}
-              disabled={uploading || full}
+              onChange={handlePickPhotos}
+              disabled={uploadingPhotos || photosFull}
             />
           </label>
 
           <p className="text-xs text-text-muted mt-2">
             {dragging
               ? 'Drop the photos to upload them.'
-              : full
+              : photosFull
                 ? `That is the maximum of ${MAX_PHOTOS} photos.`
                 : `Drag photos here, or use the button. JPG, PNG, WebP or GIF, up to 5 MB each — ${MAX_PHOTOS} photos max.`}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <span className="block text-sm font-medium mb-1.5">
+          Documents <span className="font-normal text-text-muted">(optional)</span>
+        </span>
+        <div
+          {...documentDrag}
+          className={`rounded-lg border border-dashed p-4 transition-colors ${
+            draggingDocs ? 'border-accent bg-accent/5' : 'border-border'
+          }`}
+        >
+          {documents.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {documents.map((d, i) => (
+                <div
+                  key={d.path}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-surface pl-3 pr-2 py-1.5 text-sm"
+                >
+                  <FileText className="h-4 w-4 text-text-muted shrink-0" />
+                  Document {i + 1}
+                  <button
+                    type="button"
+                    onClick={() => removeFile(d, setDocuments)}
+                    aria-label="Remove document"
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-text-muted hover:text-red-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label
+            className={`btn btn-secondary inline-flex ${
+              uploadingDocuments || documentsFull ? 'pointer-events-none opacity-70' : 'cursor-pointer'
+            }`}
+          >
+            {uploadingDocuments ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : documents.length ? (
+              <Plus className="h-4 w-4" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {uploadingDocuments ? 'Uploading…' : documents.length ? 'Add another document' : 'Add a document'}
+            <input
+              type="file"
+              accept="application/pdf"
+              multiple
+              className="hidden"
+              onChange={handlePickDocuments}
+              disabled={uploadingDocuments || documentsFull}
+            />
+          </label>
+
+          <p className="text-xs text-text-muted mt-2">
+            {draggingDocs
+              ? 'Drop the document to upload it.'
+              : documentsFull
+                ? `That is the maximum of ${MAX_DOCUMENTS} documents.`
+                : `Drag a document here, or use the button. A receipt or packing slip, if you have one. PDF, up to 10 MB each — ${MAX_DOCUMENTS} documents max.`}
           </p>
         </div>
       </div>
@@ -271,7 +422,7 @@ export default function ClaimForm({ orderId }: { orderId: string }) {
         </p>
       )}
 
-      <button type="submit" className="btn btn-primary" disabled={submitting || uploading}>
+      <button type="submit" className="btn btn-primary" disabled={submitting || uploadingPhotos || uploadingDocuments}>
         {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
         {submitting ? 'Submitting…' : 'Submit damage report'}
       </button>

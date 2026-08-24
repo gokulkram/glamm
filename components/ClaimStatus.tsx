@@ -1,3 +1,4 @@
+import { FileText } from 'lucide-react'
 import { CLAIM_STATUS_LABELS, type ClaimWithPhotos } from '@/lib/claims'
 
 /** Badge colours per claim status, matching the tone used for order states. */
@@ -45,6 +46,23 @@ export default function ClaimStatus({ claim }: { claim: ClaimWithPhotos }) {
                 alt={`Damage photo ${i + 1}`}
                 className="h-20 w-20 rounded-lg border border-border object-cover bg-surface transition-opacity hover:opacity-80"
               />
+            </a>
+          ))}
+        </div>
+      )}
+
+      {claim.documentUrls.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {claim.documentUrls.map((url, i) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
+            >
+              <FileText className="h-4 w-4" />
+              Document {i + 1}
             </a>
           ))}
         </div>

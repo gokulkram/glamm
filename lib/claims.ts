@@ -1,10 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 /**
- * Damage claims: a customer reports a damaged delivery with photos, support
- * works it from the admin order page.
+ * Damage claims: a customer reports a damaged delivery with photos and
+ * optionally a document (e.g. a receipt), support works it from the admin
+ * order page.
  *
- * Photos live in a PRIVATE bucket — unlike product/blog images, these are
+ * Files live in a PRIVATE bucket — unlike product/blog images, these are
  * customer content tied to an order. Rows store storage paths and the app
  * signs a short-lived URL at view time, so nothing is publicly readable.
  */
@@ -12,13 +13,21 @@ export const CLAIM_BUCKET = 'claim-photos'
 
 /** Mirrors the admin upload routes so the two behave the same way. */
 export const CLAIM_MAX_BYTES = 5 * 1024 * 1024 // 5 MB
-export const CLAIM_ALLOWED_TYPES: Record<string, string> = {
+export const CLAIM_ALLOWED_PHOTO_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
 }
 export const CLAIM_MAX_PHOTOS = 6
+
+/** Documents (receipts, packing slips, …) — PDF only, a bit more headroom for a scan. */
+export const CLAIM_MAX_DOCUMENT_BYTES = 10 * 1024 * 1024 // 10 MB
+export const CLAIM_ALLOWED_DOCUMENT_TYPES: Record<string, string> = {
+  'application/pdf': 'pdf',
+}
+export const CLAIM_MAX_DOCUMENTS = 3
+
 export const CLAIM_MAX_DESCRIPTION = 2000
 /** Support's note back to the customer — same generous cap as their report. */
 export const CLAIM_MAX_NOTE = 2000
@@ -50,13 +59,14 @@ export type OrderClaim = {
   kind: string
   description: string
   photo_paths: string[]
+  document_paths: string[]
   status: string
   admin_note: string | null
   created_at: string
 }
 
-/** A claim with viewable photo URLs signed for this render. */
-export type ClaimWithPhotos = OrderClaim & { photoUrls: string[] }
+/** A claim with viewable photo/document URLs signed for this render. */
+export type ClaimWithPhotos = OrderClaim & { photoUrls: string[]; documentUrls: string[] }
 
 const SIGNED_URL_TTL = 60 * 60 // 1 hour — long enough to read the page
 
@@ -76,12 +86,12 @@ export async function signClaimPhotos(paths: string[]): Promise<string[]> {
   return (data ?? []).map((d) => d.signedUrl).filter((u): u is string => Boolean(u))
 }
 
-/** Loads the claim for an order, if one exists, with signed photo URLs. */
+/** Loads the claim for an order, if one exists, with signed photo/document URLs. */
 export async function getClaimForOrder(orderId: string): Promise<ClaimWithPhotos | null> {
   const sb = supabaseAdmin()
   const { data, error } = await sb
     .from('order_claims')
-    .select('id, order_id, kind, description, photo_paths, status, admin_note, created_at')
+    .select('id, order_id, kind, description, photo_paths, document_paths, status, admin_note, created_at')
     .eq('order_id', orderId)
     .maybeSingle()
 
@@ -92,5 +102,9 @@ export async function getClaimForOrder(orderId: string): Promise<ClaimWithPhotos
   if (!data) return null
 
   const claim = data as OrderClaim
-  return { ...claim, photoUrls: await signClaimPhotos(claim.photo_paths ?? []) }
+  const [photoUrls, documentUrls] = await Promise.all([
+    signClaimPhotos(claim.photo_paths ?? []),
+    signClaimPhotos(claim.document_paths ?? []),
+  ])
+  return { ...claim, photoUrls, documentUrls }
 }

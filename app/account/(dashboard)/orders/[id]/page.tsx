@@ -99,7 +99,18 @@ export default async function MyOrderDetailPage({ params }: { params: { id: stri
         {order.tracking_number && (
           <div className="mt-5 rounded-lg bg-surface p-4 text-sm">
             <span className="text-text-muted">Tracking number: </span>
-            <span className="font-medium">{order.tracking_number}</span>
+            {order.tracking_url ? (
+              <a
+                href={order.tracking_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent hover:underline"
+              >
+                {order.tracking_number}
+              </a>
+            ) : (
+              <span className="font-medium">{order.tracking_number}</span>
+            )}
             {order.tracking_carrier && <span className="text-text-muted"> ({order.tracking_carrier})</span>}
           </div>
         )}

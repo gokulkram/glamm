@@ -53,11 +53,13 @@ export default function DeliveryIssuesPage() {
       <ul>
         <li>Clear photos of the outer packaging</li>
         <li>Clear photos of the product damage</li>
+        <li>A receipt or packing slip, if you have one (optional)</li>
       </ul>
       <p>
         The quickest way is to open the order in{' '}
         <a href="/account/orders">your account</a> and use <strong>Report damage</strong> — you can describe what
-        happened and upload your photos there, and we will see it immediately. You can also email them to{' '}
+        happened and upload your photos (and a supporting document, if you have one) there, and we will see it
+        immediately. You can also email them to{' '}
         <a href="mailto:support@glammhairextensions.com">support@glammhairextensions.com</a> if you prefer.
       </p>
       <p>
