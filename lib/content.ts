@@ -195,7 +195,6 @@ export type ContactContent = {
   /** Two lines so the map card can stack them the way it always has. */
   addressLine1: string
   addressLine2: string
-  mapsHref: string
   hoursLabel: string
   hours: string
   socialHeading: string
@@ -219,7 +218,6 @@ export const DEFAULT_CONTACT: ContactContent = {
   addressLabel: 'Visit Us',
   addressLine1: '123 Beauty Lane',
   addressLine2: 'Los Angeles, CA 90001',
-  mapsHref: 'https://maps.google.com',
   hoursLabel: 'Business Hours',
   hours: 'Mon-Fri: 9AM-6PM PST',
   socialHeading: 'Follow Us',
@@ -227,4 +225,31 @@ export const DEFAULT_CONTACT: ContactContent = {
   instagramHref: 'https://www.instagram.com/glammhair_extenions',
   facebookHref: 'https://facebook.com',
   twitterHref: 'https://twitter.com',
+}
+
+function joinAddress(addressLine1: string, addressLine2: string): string {
+  return [addressLine1, addressLine2].map((s) => s.trim()).filter(Boolean).join(', ')
+}
+
+/**
+ * A keyless Google Maps embed URL for the given address lines, or `null` when
+ * there's no address to show. No Maps API key is configured, so this uses the
+ * classic `output=embed` query form rather than the JS Embed API.
+ */
+export function mapEmbedSrc(addressLine1: string, addressLine2: string): string | null {
+  const address = joinAddress(addressLine1, addressLine2)
+  if (!address) return null
+  return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
+}
+
+/**
+ * The "open in Google Maps" link for the given address lines, or `null` when
+ * there's no address to link to. Derived from the address itself — rather
+ * than a separately-typed URL field — so the link can never point somewhere
+ * other than the address shown right next to it.
+ */
+export function mapsSearchHref(addressLine1: string, addressLine2: string): string | null {
+  const address = joinAddress(addressLine1, addressLine2)
+  if (!address) return null
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
 }

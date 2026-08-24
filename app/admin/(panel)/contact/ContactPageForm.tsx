@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Check } from 'lucide-react'
-import type { ContactContent } from '@/lib/content'
+import { Loader2, Check, MapPin } from 'lucide-react'
+import { mapEmbedSrc, type ContactContent } from '@/lib/content'
 
 const field =
   'w-full px-3 py-2 rounded-lg border border-border bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/30'
@@ -53,6 +53,14 @@ export default function ContactPageForm({ initial }: { initial: ContactContent }
 
   const set = <K extends keyof ContactContent>(k: K, v: ContactContent[K]) =>
     setC((prev) => ({ ...prev, [k]: v }))
+
+  // Debounced so the embedded map doesn't reload on every keystroke.
+  const [previewAddress, setPreviewAddress] = useState({ line1: c.addressLine1, line2: c.addressLine2 })
+  useEffect(() => {
+    const t = setTimeout(() => setPreviewAddress({ line1: c.addressLine1, line2: c.addressLine2 }), 600)
+    return () => clearTimeout(t)
+  }, [c.addressLine1, c.addressLine2])
+  const mapSrc = mapEmbedSrc(previewAddress.line1, previewAddress.line2)
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,17 +123,37 @@ export default function ContactPageForm({ initial }: { initial: ContactContent }
           <TextField label="Phone card title" value={c.phoneLabel} onChange={(v) => set('phoneLabel', v)} />
           <TextField label="Phone number" value={c.phone} onChange={(v) => set('phone', v)} hint="Written however you want it shown — the tel: link is added for you." />
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <TextField label="Address card title" value={c.addressLabel} onChange={(v) => set('addressLabel', v)} />
-          <TextField label="Map link" value={c.mapsHref} onChange={(v) => set('mapsHref', v)} hint="A full https:// address." />
-        </div>
+        <TextField label="Address card title" value={c.addressLabel} onChange={(v) => set('addressLabel', v)} />
         <div className="grid sm:grid-cols-2 gap-4">
           <TextField label="Address — line 1" value={c.addressLine1} onChange={(v) => set('addressLine1', v)} />
           <TextField label="Address — line 2" value={c.addressLine2} onChange={(v) => set('addressLine2', v)} />
         </div>
         <p className="text-xs text-text-muted -mt-2">
-          The address is shown twice — in its card and under the map — from these two lines.
+          The address is shown twice — in its card and under the map — and drives both the map preview
+          below and the &quot;view on Google Maps&quot; link on the page.
         </p>
+        <div>
+          <label className={labelCls}>Map preview</label>
+          <div className="rounded-lg overflow-hidden border border-border">
+            {mapSrc ? (
+              <iframe
+                key={mapSrc}
+                src={mapSrc}
+                title="Map preview"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="aspect-video w-full border-0"
+              />
+            ) : (
+              <div className="aspect-video bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                <div className="text-center">
+                  <MapPin className="w-8 h-8 text-accent mx-auto mb-2" />
+                  <p className="text-text-muted text-sm">Add an address to preview the map</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <TextField label="Hours card title" value={c.hoursLabel} onChange={(v) => set('hoursLabel', v)} />
           <TextField label="Opening hours" value={c.hours} onChange={(v) => set('hours', v)} />

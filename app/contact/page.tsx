@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook, Twitter } from 'lucide-react'
 import { getContact } from '@/lib/settings'
+import { mapEmbedSrc, mapsSearchHref } from '@/lib/content'
 import ContactForm from './ContactForm'
 
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,8 @@ export default async function ContactPage() {
   const mailto = `mailto:${c.email}`
   const tel = `tel:${c.phone.replace(/[^\d+]/g, '')}`
   const address = [c.addressLine1, c.addressLine2].filter(Boolean).join(', ')
+  const mapSrc = mapEmbedSrc(c.addressLine1, c.addressLine2)
+  const mapsHref = mapsSearchHref(c.addressLine1, c.addressLine2)
 
   return (
     <>
@@ -59,9 +62,13 @@ export default async function ContactPage() {
             <a href={tel} className={infoLink}>{c.phone}</a>
           </InfoCard>
           <InfoCard icon={<MapPin className="w-7 h-7 text-white" />} title={c.addressLabel}>
-            <a href={c.mapsHref} className={infoLink} target="_blank" rel="noopener noreferrer">
-              {address}
-            </a>
+            {mapsHref ? (
+              <a href={mapsHref} className={infoLink} target="_blank" rel="noopener noreferrer">
+                {address}
+              </a>
+            ) : (
+              <span className="text-text-muted">{address}</span>
+            )}
           </InfoCard>
           <InfoCard icon={<Clock className="w-7 h-7 text-white" />} title={c.hoursLabel}>
             <p className="text-text-muted">{c.hours}</p>
@@ -73,16 +80,26 @@ export default async function ContactPage() {
 
           {/* Right Column */}
           <div className="space-y-8">
-            {/* Map Placeholder — the same address as the card above it, so the
-                two can never disagree. */}
+            {/* Map — same address as the card above it, so the two can never
+                disagree. Falls back to a placeholder when there's no address. */}
             <div className="card overflow-hidden">
-              <div className="aspect-video bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-accent mx-auto mb-3" />
-                  <p className="text-text-muted font-medium">{c.addressLine1}</p>
-                  <p className="text-text-muted">{c.addressLine2}</p>
+              {mapSrc ? (
+                <iframe
+                  src={mapSrc}
+                  title="Map to our location"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="aspect-video w-full border-0"
+                />
+              ) : (
+                <div className="aspect-video bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="w-12 h-12 text-accent mx-auto mb-3" />
+                    <p className="text-text-muted font-medium">{c.addressLine1}</p>
+                    <p className="text-text-muted">{c.addressLine2}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick Links */}
