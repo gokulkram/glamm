@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, MapPin, User, CreditCard, Truck, ExternalLink, AlertTriangle, FileText } from 'lucide-react'
 import { getOrderDetail } from '@/lib/admin/data'
 import { getClaimForOrder } from '@/lib/claims'
+import { signShippingFiles } from '@/lib/shippingFiles'
 import { EmailLink, PhoneLink, paymentLabel } from '@/components/admin/ContactLinks'
 import ClaimStatus from '@/components/ClaimStatus'
 import OrderManager from './OrderManager'
@@ -52,6 +53,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
   // Photos live in a private bucket; getClaimForOrder signs them for this render.
   const claim = await getClaimForOrder(order.id)
+  const shippingFiles = await signShippingFiles(order.shipping_files)
 
   const customerName = `${order.first_name ?? ''} ${order.last_name ?? ''}`.trim() || '—'
   const date = new Date(order.created_at).toLocaleString('en-US', {
@@ -149,6 +151,9 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             paymentStatus={order.payment_status}
             trackingNumber={order.tracking_number}
             trackingCarrier={order.tracking_carrier}
+            trackingUrl={order.tracking_url}
+            packageDetails={order.package_details}
+            shippingFiles={shippingFiles}
           />
 
           <div className="card p-5">
@@ -228,7 +233,18 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               <Row label="Carrier">{order.tracking_carrier || '—'}</Row>
               <Row label="Tracking">
                 {order.tracking_number ? (
-                  <span className="font-mono text-xs break-all">{order.tracking_number}</span>
+                  order.tracking_url ? (
+                    <a
+                      href={order.tracking_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs break-all text-accent hover:underline"
+                    >
+                      {order.tracking_number}
+                    </a>
+                  ) : (
+                    <span className="font-mono text-xs break-all">{order.tracking_number}</span>
+                  )
                 ) : (
                   <span className="text-text-muted">Not shipped yet</span>
                 )}

@@ -216,6 +216,7 @@ type ShippingData = {
   firstName?: string | null
   trackingNumber?: string | null
   trackingCarrier?: string | null
+  trackingUrl?: string | null
 }
 
 export async function sendShippingNotification(data: ShippingData): Promise<boolean> {
@@ -225,12 +226,18 @@ export async function sendShippingNotification(data: ShippingData): Promise<bool
     return false
   }
 
+  // trackingUrl is validated at the API layer to start with http(s):// before
+  // it ever reaches here, so it's safe to use directly as an href.
+  const trackingValue = data.trackingUrl
+    ? `<a href="${data.trackingUrl}" style="color:#0a1121;">${data.trackingNumber}</a>`
+    : data.trackingNumber
+
   const tracking = data.trackingNumber
     ? `<div style="margin-top:16px;background:#FAF8F5;border:1px solid #EAE3D9;border-radius:12px;padding:16px;">
          <div style="color:#6B6B6B;font-size:13px;">Tracking number${
            data.trackingCarrier ? ` (${data.trackingCarrier})` : ''
          }</div>
-         <div style="font-weight:700;font-size:16px;margin-top:2px;">${data.trackingNumber}</div>
+         <div style="font-weight:700;font-size:16px;margin-top:2px;">${trackingValue}</div>
        </div>`
     : ''
 
@@ -389,6 +396,7 @@ type DamageClaimData = {
   customerName?: string | null
   description: string
   photoCount: number
+  documentCount?: number
 }
 
 /**
@@ -417,6 +425,8 @@ export async function sendDamageClaimNotification(data: DamageClaimData): Promis
       <div style="font-size:18px;font-weight:700;">📦 Damage reported</div>
       <div style="opacity:.8;margin-top:2px;">${data.orderNumber} · ${data.photoCount} photo${
         data.photoCount === 1 ? '' : 's'
+      }${
+        data.documentCount ? ` · ${data.documentCount} document${data.documentCount === 1 ? '' : 's'}` : ''
       } attached</div>
     </div>
     <div style="padding:24px;">
