@@ -120,7 +120,7 @@ export default function ProductForm({
       setSaving(false)
       return
     }
-    router.push('/admin')
+    router.push('/admin/products')
     router.refresh()
   }
 
@@ -141,7 +141,7 @@ export default function ProductForm({
 
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl">
-      <Link href="/admin" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-accent mb-4">
+      <Link href="/admin/products" className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-accent mb-4">
         <ArrowLeft className="h-4 w-4" /> Back to products
       </Link>
       <h1 className="text-2xl font-bold mb-6">{isEdit ? 'Edit Product' : 'Add Product'}</h1>
@@ -391,7 +391,7 @@ export default function ProductForm({
           <button type="submit" disabled={saving} className="btn btn-primary">
             {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : isEdit ? 'Save changes' : 'Create product'}
           </button>
-          <Link href="/admin" className="btn btn-secondary">
+          <Link href="/admin/products" className="btn btn-secondary">
             Cancel
           </Link>
         </div>

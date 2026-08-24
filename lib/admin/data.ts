@@ -82,6 +82,9 @@ export type OrderDetail = {
   auth_code: string | null
   tracking_number: string | null
   tracking_carrier: string | null
+  tracking_url: string | null
+  package_details: string | null
+  shipping_files: string[]
   created_at: string
   updated_at: string | null
   /** `customers.id` for this order's email, so the order can link to them. */
@@ -140,6 +143,9 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     auth_code: data.auth_code ?? null,
     tracking_number: data.tracking_number,
     tracking_carrier: data.tracking_carrier,
+    tracking_url: data.tracking_url ?? null,
+    package_details: data.package_details ?? null,
+    shipping_files: data.shipping_files ?? [],
     created_at: data.created_at,
     updated_at: data.updated_at ?? null,
     customerId: customer?.id ?? null,
