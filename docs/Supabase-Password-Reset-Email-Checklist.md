@@ -1,5 +1,9 @@
 # Fix: Password-Reset Email (Supabase) — Step-by-Step Checklist
 
+**Status:** ✅ Done — Custom SMTP enabled in Supabase (Authentication → Emails →
+SMTP Settings) on 2026-08-25, using the same Gmail account as order emails.
+Verified end-to-end: password-reset email arrives in inbox, not spam.
+
 **Site:** https://glamm.vercel.app
 **Supabase project:** `sysbekcoasfkeknpyafc`
 **Date:** June 26, 2026
@@ -29,9 +33,9 @@ The forgot-password page works in code, but two Supabase **project settings** br
   ```
 - [ ] (Optional, for local development) also add:
   ```
-  http://localhost:3007/**
+  http://localhost:3010/**
   ```
-  *(Local dev now runs on port 3007, not 3000.)*
+  *(Local dev runs on port 3010, not 3000 — 3000 is used by XAMPP Apache on this machine.)*
 - [ ] Click **Save**.
 
 ✅ **Result:** reset links will now redirect to `https://glamm.vercel.app/account/reset-password`.
@@ -88,6 +92,6 @@ If the email doesn't arrive after Part B, recheck the SMTP username/password (Ap
 
 ## Notes
 
-- **Two separate email systems:** order/shipping confirmations use the app's Gmail SMTP (via Nodemailer); **auth emails** (password reset, signup) use **Supabase's** mailer configured above. Fixing one does not fix the other.
+- **Two separate email systems:** order/shipping confirmations use the app's Gmail SMTP (via Nodemailer, editable at `/admin/mail` in the admin panel — see `supabase/mail-credentials.sql`); **auth emails** (password reset, signup) use **Supabase's** mailer configured above. Fixing one does not fix the other, and `/admin/mail` does not reach this Supabase-side config.
 - **Rate limits:** without custom SMTP, Supabase caps auth emails to a few per hour — fine for a quick test, not for production.
 - **No code change needed:** the storefront already sends the correct request with the right redirect; these are project-configuration fixes only.
