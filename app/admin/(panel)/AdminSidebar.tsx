@@ -19,6 +19,7 @@ import {
   Home,
   HelpCircle,
   Mail,
+  MailCheck,
   Boxes,
   BadgeDollarSign,
   Layers,
@@ -68,6 +69,7 @@ const NAV: NavEntry[] = [
       { href: '/admin/contact', label: 'Contact', icon: Mail },
     ],
   },
+  { type: 'link', href: '/admin/mail', label: 'Mail', icon: MailCheck },
   { type: 'link', href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

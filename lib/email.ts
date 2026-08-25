@@ -1,10 +1,19 @@
 import nodemailer from 'nodemailer'
+import { getStoredMailCredentials } from '@/lib/mailCredentials'
 
-function getTransport() {
-  const host = process.env.SMTP_HOST
-  const port = Number(process.env.SMTP_PORT || 465)
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+/**
+ * Admin-saved SMTP credentials (mail_credentials table) win over env vars, so
+ * the Mail settings admin page's edits take effect without a redeploy; falls
+ * back to SMTP_HOST/PORT/USER/PASS when nothing's been saved. No client
+ * caching — a saved value can change at runtime, and caching across calls
+ * would keep serving a stale transport after a credentials save.
+ */
+async function getTransport() {
+  const stored = await getStoredMailCredentials()
+  const host = stored.host || process.env.SMTP_HOST
+  const port = Number(stored.port || process.env.SMTP_PORT || 465)
+  const user = stored.user || process.env.SMTP_USER
+  const pass = stored.pass || process.env.SMTP_PASS
   if (!host || !user || !pass) return null
   return nodemailer.createTransport({
     host,
@@ -14,15 +23,20 @@ function getTransport() {
   })
 }
 
-const FROM = () => process.env.SMTP_FROM || process.env.SMTP_USER || 'Glamm Hair'
+async function FROM(): Promise<string> {
+  const stored = await getStoredMailCredentials()
+  return stored.from || process.env.SMTP_FROM || stored.user || process.env.SMTP_USER || 'Glamm Hair'
+}
 
 /**
- * Recipients for internal store notifications. Uses ORDER_NOTIFY_EMAILS if set,
- * otherwise falls back to ADMIN_EMAILS — so order alerts can go to a shared
+ * Recipients for internal store notifications (new order / contact form /
+ * damage claim). A saved value from the Mail settings admin page wins, then
+ * ORDER_NOTIFY_EMAILS, then ADMIN_EMAILS — so order alerts can go to a shared
  * inbox without also granting admin-panel access.
  */
-function notificationRecipients(): string[] {
-  return (process.env.ORDER_NOTIFY_EMAILS || process.env.ADMIN_EMAILS || '')
+async function notificationRecipients(): Promise<string[]> {
+  const stored = await getStoredMailCredentials()
+  return (stored.notify || process.env.ORDER_NOTIFY_EMAILS || process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
@@ -57,7 +71,7 @@ function shell(title: string, body: string) {
 }
 
 export async function sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping order confirmation email')
     return false
@@ -109,7 +123,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: data.email,
       subject: `Your Glamm Hair order ${data.orderNumber} is confirmed`,
       html: shell('Order confirmation', body),
@@ -137,12 +151,12 @@ type NewOrderNotificationData = {
 
 /** Internal alert to store staff when a new order is placed. */
 export async function sendNewOrderNotification(data: NewOrderNotificationData): Promise<boolean> {
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping new-order notification')
     return false
   }
-  const to = notificationRecipients()
+  const to = await notificationRecipients()
   if (to.length === 0) {
     console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping new-order notification')
     return false
@@ -198,7 +212,7 @@ export async function sendNewOrderNotification(data: NewOrderNotificationData): 
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: to.join(','),
       subject: `🛒 New order ${data.orderNumber} — ${money(data.total)}`,
       html: shell('New order', body),
@@ -220,7 +234,7 @@ type ShippingData = {
 }
 
 export async function sendShippingNotification(data: ShippingData): Promise<boolean> {
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping shipping email')
     return false
@@ -254,7 +268,7 @@ export async function sendShippingNotification(data: ShippingData): Promise<bool
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: data.email,
       subject: `Your Glamm Hair order ${data.orderNumber} has shipped`,
       html: shell('Shipping update', body),
@@ -304,7 +318,7 @@ export async function sendOrderStatusUpdate(data: OrderStatusData): Promise<bool
   const copy = STATUS_COPY[data.status]
   if (!copy) return false // no customer email for this status
 
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping status email')
     return false
@@ -322,7 +336,7 @@ export async function sendOrderStatusUpdate(data: OrderStatusData): Promise<bool
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: data.email,
       subject: `Your Glamm Hair order ${data.orderNumber} ${copy.subject}`,
       html: shell('Order update', body),
@@ -344,12 +358,12 @@ type ContactMessageData = {
 
 /** Send a contact-form submission to store staff (Reply-To = the visitor). */
 export async function sendContactMessage(data: ContactMessageData): Promise<boolean> {
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping contact email')
     return false
   }
-  const to = notificationRecipients()
+  const to = await notificationRecipients()
   if (to.length === 0) {
     console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping contact email')
     return false
@@ -376,7 +390,7 @@ export async function sendContactMessage(data: ContactMessageData): Promise<bool
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: to.join(','),
       replyTo: data.email,
       subject: `Contact form: ${data.subject || 'New message'} — ${data.name}`,
@@ -405,12 +419,12 @@ type DamageClaimData = {
  * rather than the images themselves.
  */
 export async function sendDamageClaimNotification(data: DamageClaimData): Promise<boolean> {
-  const transport = getTransport()
+  const transport = await getTransport()
   if (!transport) {
     console.warn('SMTP not configured — skipping damage-claim notification')
     return false
   }
-  const to = notificationRecipients()
+  const to = await notificationRecipients()
   if (to.length === 0) {
     console.warn('No ORDER_NOTIFY_EMAILS / ADMIN_EMAILS set — skipping damage-claim notification')
     return false
@@ -446,7 +460,7 @@ export async function sendDamageClaimNotification(data: DamageClaimData): Promis
 
   try {
     await transport.sendMail({
-      from: FROM(),
+      from: await FROM(),
       to: to.join(','),
       replyTo: data.email,
       subject: `📦 Damage reported on ${data.orderNumber}`,
@@ -456,5 +470,41 @@ export async function sendDamageClaimNotification(data: DamageClaimData): Promis
   } catch (err) {
     console.error('sendDamageClaimNotification failed:', err)
     return false
+  }
+}
+
+/**
+ * Sends a one-off email to verify the current SMTP settings (saved or env)
+ * actually work — used by the "Send test email" button on the Mail settings
+ * admin page. Unlike the other senders, this surfaces the real SMTP error
+ * back to the caller instead of just logging it, since the whole point is to
+ * tell the admin what's wrong.
+ */
+export async function sendTestEmail(to: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const transport = await getTransport()
+  if (!transport) {
+    return { ok: false, error: 'SMTP is not configured — set host, user, and password first' }
+  }
+
+  const body = `
+    <div style="background:linear-gradient(135deg,#0a1121,#1a2744);padding:28px 24px;color:#fff;text-align:center;">
+      <div style="font-size:20px;font-weight:700;">Test email ✅</div>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0;">This is a test email from the Glamm Hair admin panel's Mail settings page.</p>
+      <p style="color:#6B6B6B;font-size:13px;margin-top:12px;">If you're reading this, SMTP is configured correctly.</p>
+    </div>`
+
+  try {
+    await transport.sendMail({
+      from: await FROM(),
+      to,
+      subject: 'Glamm Hair — test email',
+      html: shell('Test email', body),
+    })
+    return { ok: true }
+  } catch (err) {
+    console.error('sendTestEmail failed:', err)
+    return { ok: false, error: err instanceof Error ? err.message : 'Failed to send test email' }
   }
 }
