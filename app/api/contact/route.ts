@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const ok = await sendContactMessage({ name, email, phone, subject, message })
   if (!ok) {
     return NextResponse.json(
-      { error: 'Could not send your message right now. Please email us directly at support@glammhair.com.' },
+      { error: 'Could not send your message right now. Please email us directly at support@glammhairextensions.com.' },
       { status: 500 },
     )
   }

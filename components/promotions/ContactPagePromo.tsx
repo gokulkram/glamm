@@ -39,14 +39,14 @@ export function ContactPagePromo() {
               title: 'Call Us',
               description: 'Speak with our experts',
               action: 'Call Now',
-              href: 'tel:+1234567890'
+              href: 'tel:+13104615791'
             },
             {
               icon: Mail,
               title: 'Email Us',
               description: 'Get a response within 24hrs',
               action: 'Send Email',
-              href: 'mailto:info@glammhair.com'
+              href: 'mailto:support@glammhairextensions.com'
             },
             {
               icon: MessageCircle,

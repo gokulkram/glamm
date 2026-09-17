@@ -32,7 +32,7 @@ export default function HowToPayPage() {
       </p>
       <p>
         If you have any payment issues, contact us at{' '}
-        <a href="mailto:support@glammhair.com">support@glammhair.com</a>.
+        <a href="mailto:support@glammhairextensions.com">support@glammhairextensions.com</a>.
       </p>
     </PolicyLayout>
   )

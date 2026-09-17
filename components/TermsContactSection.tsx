@@ -3,21 +3,18 @@
 import { useState } from 'react'
 import { Phone, MessageSquare, Send } from 'lucide-react'
 
-// Phone number is a placeholder — replace with the real Glamm Hair number.
-const PHONE = '+15551234567'
-
-function CallTextButtons() {
+function CallTextButtons({ phone }: { phone: string }) {
   return (
     <div className="flex gap-3">
       <a
-        href={`tel:${PHONE}`}
+        href={`tel:${phone}`}
         className="inline-flex items-center gap-2 px-5 py-2 bg-[#111] text-white !text-white no-underline hover:!no-underline hover:bg-black text-xs font-bold uppercase tracking-widest rounded transition-colors"
       >
         <Phone className="w-3.5 h-3.5" />
         Call
       </a>
       <a
-        href={`sms:${PHONE}`}
+        href={`sms:${phone}`}
         className="inline-flex items-center gap-2 px-5 py-2 bg-[#111] text-white !text-white no-underline hover:!no-underline hover:bg-black text-xs font-bold uppercase tracking-widest rounded transition-colors"
       >
         <MessageSquare className="w-3.5 h-3.5" />
@@ -27,7 +24,9 @@ function CallTextButtons() {
   )
 }
 
-export default function TermsContactSection() {
+/** `phone` is the admin-saved contact number; tel:/sms: keep only digits and a leading +. */
+export default function TermsContactSection({ phone }: { phone: string }) {
+  const dialable = phone.replace(/[^\d+]/g, '')
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', message: '' })
 
@@ -52,14 +51,14 @@ export default function TermsContactSection() {
 
         <div className="space-y-3">
           <p className="text-text-muted">9:30 a.m. to 4:30 p.m. ET</p>
-          <CallTextButtons />
+          <CallTextButtons phone={dialable} />
         </div>
 
         <hr className="border-border" />
 
         <div className="space-y-3">
           <p className="text-text-muted">9:00 p.m. to 4:30 a.m. ET (next day)</p>
-          <CallTextButtons />
+          <CallTextButtons phone={dialable} />
         </div>
 
         <div>

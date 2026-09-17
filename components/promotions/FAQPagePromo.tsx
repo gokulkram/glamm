@@ -58,14 +58,14 @@ export function FAQPagePromo() {
                 title: 'Call Us',
                 description: 'Mon-Fri 9am-6pm EST',
                 cta: 'Call Now',
-                href: 'tel:+1234567890'
+                href: 'tel:+13104615791'
               },
               {
                 icon: Mail,
                 title: 'Email Support',
                 description: 'Response within 24 hours',
                 cta: 'Send Email',
-                href: 'mailto:support@glammhair.com'
+                href: 'mailto:support@glammhairextensions.com'
               }
             ].map((contact, i) => (
               <div key={i} className="group text-center p-8 rounded-2xl bg-white border-2 border-accent/20 hover:border-accent/50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">

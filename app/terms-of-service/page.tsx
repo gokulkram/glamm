@@ -1,13 +1,15 @@
 import { Metadata } from 'next'
 import PolicyLayout from '@/components/layout/PolicyLayout'
 import TermsContactSection from '@/components/TermsContactSection'
+import { getContact } from '@/lib/settings'
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Glamm Hair Extensions',
   description: 'The terms and conditions that govern your use of the Glamm Hair Extensions store and services.',
 }
 
-export default function TermsOfServicePage() {
+export default async function TermsOfServicePage() {
+  const contact = await getContact()
   return (
     <PolicyLayout
       eyebrow="Terms of Service"
@@ -287,14 +289,14 @@ export default function TermsOfServicePage() {
       <h2>Section 20: Contact Information</h2>
       <p>
         Questions about the Terms of Service should be sent to us at{' '}
-        <a href="mailto:support@glammhair.com">support@glammhair.com</a>.
+        <a href={`mailto:${contact.email}`}>{contact.email}</a>.
       </p>
       <p>
         Customers will only be charged once for shipping costs (this includes returns). No restocking fee is charged
         to consumers for the return of a product.
       </p>
 
-      <TermsContactSection />
+      <TermsContactSection phone={contact.phone} />
     </PolicyLayout>
   )
 }

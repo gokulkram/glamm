@@ -52,7 +52,7 @@ We want you to love your purchase! If you're not completely satisfied, we offer 
 - Refunds are processed within 5-7 business days
 - Exchanges available for different sizes or styles
 
-To start a return or exchange, contact support@glammhair.com.`,
+To start a return or exchange, contact support@glammhairextensions.com.`,
 }
 
 export type ContentBlock =
@@ -213,10 +213,10 @@ export const DEFAULT_CONTACT: ContactContent = {
   emailLabel: 'Email Us',
   email: 'support@glammhairextensions.com',
   phoneLabel: 'Call Us',
-  phone: '+1 (555) 123-4567',
+  phone: '+1 310-461-5791',
   addressLabel: 'Visit Us',
-  addressLine1: '123 Beauty Lane',
-  addressLine2: 'Los Angeles, CA 90001',
+  addressLine1: '3959 Wilshire Blvd a25',
+  addressLine2: 'Los Angeles, CA 90010, United States',
   hoursLabel: 'Business Hours',
   hours: 'Mon-Fri: 9AM-6PM PST',
   socialHeading: 'Follow Us',
