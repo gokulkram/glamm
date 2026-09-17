@@ -17,6 +17,8 @@ import type { Address } from '@/lib/account/data'
 
 const CLOVER_SANDBOX_SDK_URL = 'https://checkout.sandbox.dev.clover.com/sdk.js'
 const CLOVER_PRODUCTION_SDK_URL = 'https://checkout.clover.com/sdk.js'
+const CLOVER_FIELD_CLASS =
+  'h-12 overflow-hidden border border-border rounded-lg focus-within:ring-2 focus-within:ring-accent focus-within:border-transparent'
 
 type CloverElement = { mount: (selector: string) => void }
 type CloverInstance = {
@@ -31,6 +33,16 @@ declare global {
 }
 
 type CustomerInfo = Record<string, string>
+
+const REQUIRED_FIELDS: [string, string][] = [
+  ['email', 'Email'], ['firstName', 'First Name'], ['lastName', 'Last Name'],
+  ['address1', 'Address'], ['city', 'City'], ['state', 'State'], ['zip', 'ZIP'],
+]
+
+/** Names of the required fields still empty, e.g. "Last Name, ZIP". */
+function missingFields(info: CustomerInfo): string {
+  return REQUIRED_FIELDS.filter(([f]) => !info[f]?.trim()).map(([, label]) => label).join(', ')
+}
 
 // Card form rendered inside <Elements>. Confirms the PaymentIntent and, on
 // success, finalises the order. (3-D Secure cards redirect to /order-confirmation,
@@ -57,9 +69,9 @@ function StripeCardForm({
 
   const pay = async () => {
     if (!stripe || !elements) return
-    const required = ['email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip']
-    if (required.some((f) => !customerInfo[f]?.trim())) {
-      onError('Please fill in all required fields before paying.')
+    const missing = missingFields(customerInfo)
+    if (missing) {
+      onError(`Please fill in: ${missing}.`)
       return
     }
     onError(null)
@@ -155,7 +167,21 @@ function CloverCardForm({
     const clover = new window.Clover(publicToken, { merchantId })
     cloverRef.current = clover
     const elements = clover.elements()
-    const styles = { input: { fontSize: '16px' } }
+    // Clover's iframes default to 150px tall, so the wrappers set a fixed
+    // height and these styles centre the input inside it.
+    const styles = {
+      body: { margin: '0', padding: '0' },
+      input: {
+        fontSize: '16px',
+        height: '48px',
+        padding: '0 16px',
+        margin: '0',
+        border: 'none',
+        boxSizing: 'border-box',
+        width: '100%',
+      },
+      'input::placeholder': { color: '#9ca3af' },
+    }
     elements.create('CARD_NUMBER', styles).mount('#clover-card-number')
     elements.create('CARD_DATE', styles).mount('#clover-card-date')
     elements.create('CARD_CVV', styles).mount('#clover-card-cvv')
@@ -164,9 +190,9 @@ function CloverCardForm({
   }, [sdkReady, publicToken, merchantId])
 
   const pay = async () => {
-    const required = ['email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip']
-    if (required.some((f) => !customerInfo[f]?.trim())) {
-      onError('Please fill in all required fields before paying.')
+    const missing = missingFields(customerInfo)
+    if (missing) {
+      onError(`Please fill in: ${missing}.`)
       return
     }
     if (!cloverRef.current) {
@@ -209,13 +235,15 @@ function CloverCardForm({
 
   return (
     <div className="mb-4">
-      <Script src={sdkUrl} strategy="afterInteractive" onLoad={() => setSdkReady(true)} />
+      {/* onReady (not onLoad) also fires when the form remounts after a tab switch,
+          since the script is already loaded by then and onLoad won't fire again. */}
+      <Script src={sdkUrl} strategy="afterInteractive" onReady={() => setSdkReady(true)} />
       <div className="grid gap-3">
-        <div id="clover-card-number" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+        <div id="clover-card-number" className={CLOVER_FIELD_CLASS} />
         <div className="grid grid-cols-3 gap-3">
-          <div id="clover-card-date" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
-          <div id="clover-card-cvv" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
-          <div id="clover-card-postal" className="px-4 py-3 border border-border rounded-lg min-h-[48px]" />
+          <div id="clover-card-date" className={CLOVER_FIELD_CLASS} />
+          <div id="clover-card-cvv" className={CLOVER_FIELD_CLASS} />
+          <div id="clover-card-postal" className={CLOVER_FIELD_CLASS} />
         </div>
       </div>
       <button onClick={pay} disabled={!elementsReady || isProcessing} className="btn btn-primary w-full mt-5">
@@ -442,11 +470,9 @@ export default function CheckoutPage() {
   // Manual order placement (used when the card gateway isn't configured).
   // Saves a real order with payment_status "pending".
   const handlePlaceOrder = async () => {
-    const required: (keyof typeof customerInfo)[] = [
-      'email', 'firstName', 'lastName', 'address1', 'city', 'state', 'zip',
-    ]
-    if (required.some((f) => !customerInfo[f]?.trim())) {
-      setError('Please fill in all required fields before placing your order.')
+    const missing = missingFields(customerInfo)
+    if (missing) {
+      setError(`Please fill in: ${missing}.`)
       return
     }
     setError(null)
