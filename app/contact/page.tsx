@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook, BookOpen } from 'lucide-react'
 import { getContact } from '@/lib/settings'
 import { mapEmbedSrc, mapsSearchHref } from '@/lib/content'
 import ContactForm from './ContactForm'
@@ -116,7 +116,9 @@ export default async function ContactPage() {
                   </div>
                 </Link>
                 <Link href="/how-to-use" className="flex items-center gap-3 text-text-muted hover:text-accent transition-colors group">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all"></div>
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
                   <div>
                     <div className="font-semibold">How To Use</div>
                     <div className="text-sm">Installation guides</div>
