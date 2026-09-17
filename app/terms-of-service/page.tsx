@@ -296,7 +296,7 @@ export default async function TermsOfServicePage() {
         to consumers for the return of a product.
       </p>
 
-      <TermsContactSection phone={contact.phone} />
+      <TermsContactSection phone={contact.phone} hours={contact.hours} />
     </PolicyLayout>
   )
 }

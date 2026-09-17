@@ -24,8 +24,11 @@ function CallTextButtons({ phone }: { phone: string }) {
   )
 }
 
-/** `phone` is the admin-saved contact number; tel:/sms: keep only digits and a leading +. */
-export default function TermsContactSection({ phone }: { phone: string }) {
+/**
+ * `phone` and `hours` are the admin-saved contact details, so this matches the
+ * contact page. tel:/sms: keep only digits and a leading +.
+ */
+export default function TermsContactSection({ phone, hours }: { phone: string; hours: string }) {
   const dialable = phone.replace(/[^\d+]/g, '')
   const [submitted, setSubmitted] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -50,14 +53,7 @@ export default function TermsContactSection({ phone }: { phone: string }) {
         <p className="font-medium">For urgent matters on business days, please:</p>
 
         <div className="space-y-3">
-          <p className="text-text-muted">9:30 a.m. to 4:30 p.m. ET</p>
-          <CallTextButtons phone={dialable} />
-        </div>
-
-        <hr className="border-border" />
-
-        <div className="space-y-3">
-          <p className="text-text-muted">9:00 p.m. to 4:30 a.m. ET (next day)</p>
+          <p className="text-text-muted">{hours}</p>
           <CallTextButtons phone={dialable} />
         </div>
 
