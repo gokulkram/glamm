@@ -46,7 +46,7 @@ export async function cloverPublicCredentials(): Promise<{
 function chargesEndpoint(isSandbox: boolean): string {
   return isSandbox
     ? 'https://scl-sandbox.dev.clover.com/v1/charges'
-    : 'https://scl.dev.clover.com/v1/charges'
+    : 'https://scl.clover.com/v1/charges'
 }
 
 export type ChargeParams = {
