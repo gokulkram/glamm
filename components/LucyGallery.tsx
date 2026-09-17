@@ -37,13 +37,13 @@ export function LucyGallery() {
           </p>
           
           <a 
-            href="https://instagram.com/glammhair" 
+            href="https://www.instagram.com/glammhair_extenions" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-accent font-semibold hover:gap-3 transition-all"
           >
             <Instagram className="w-5 h-5" />
-            <span>@glammhair</span>
+            <span>@glammhair_extenions</span>
           </a>
         </div>
 
@@ -95,7 +95,7 @@ export function LucyGallery() {
         {/* CTA */}
         <div className="text-center">
           <a
-            href="https://instagram.com/glammhair"
+            href="https://www.instagram.com/glammhair_extenions"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-lg shadow-2xl hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
