@@ -67,13 +67,6 @@ export default function TermsContactSection({ phone, hours }: { phone: string; h
 
       {/* Right: contact form */}
       <div>
-        <div className="mb-6">
-          <p className="font-bold">Non business days (weekends/holidays):</p>
-          <p className="text-text-muted text-sm">
-            Please <strong>TEXT</strong> only. No phone calls are answered.
-          </p>
-        </div>
-
         {submitted ? (
           <div className="card p-8 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
