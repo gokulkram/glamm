@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook, Twitter } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, Send, Instagram, MessageCircle, Facebook } from 'lucide-react'
 import { getContact } from '@/lib/settings'
 import { mapEmbedSrc, mapsSearchHref } from '@/lib/content'
 import ContactForm from './ContactForm'
@@ -144,9 +144,6 @@ export default async function ContactPage() {
                 </a>
                 <a href={c.facebookHref} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent transition-all hover:scale-110 hover:text-blue-600" aria-label="Facebook">
                   <Facebook className="w-6 h-6" />
-                </a>
-                <a href={c.twitterHref} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent transition-all hover:scale-110 hover:text-blue-400" aria-label="Twitter">
-                  <Twitter className="w-6 h-6" />
                 </a>
               </div>
             </div>

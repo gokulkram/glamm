@@ -319,7 +319,7 @@ const CONTACT_TEXT_FIELDS = [
   'addressLabel', 'addressLine1', 'addressLine2',
   'hoursLabel', 'hours',
   'socialHeading', 'socialBlurb',
-  'instagramHref', 'facebookHref', 'twitterHref',
+  'instagramHref', 'facebookHref',
 ] as const
 
 /** Take each field from the saved row only when it is a non-empty string. */
@@ -359,7 +359,7 @@ export async function setContact(
 
   // Only the href fields are links. Email and phone are stored bare and get
   // their mailto:/tel: prefix at render, so they must not go through badLink.
-  for (const href of [value.instagramHref, value.facebookHref, value.twitterHref]) {
+  for (const href of [value.instagramHref, value.facebookHref]) {
     const problem = badLink(href)
     if (problem) return { ok: false, error: problem }
   }

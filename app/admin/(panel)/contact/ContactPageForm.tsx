@@ -166,7 +166,6 @@ export default function ContactPageForm({ initial }: { initial: ContactContent }
         <TextField label="Blurb" value={c.socialBlurb} onChange={(v) => set('socialBlurb', v)} textarea />
         <TextField label="Instagram" value={c.instagramHref} onChange={(v) => set('instagramHref', v)} hint="A full https:// address." />
         <TextField label="Facebook" value={c.facebookHref} onChange={(v) => set('facebookHref', v)} />
-        <TextField label="X / Twitter" value={c.twitterHref} onChange={(v) => set('twitterHref', v)} />
       </div>
 
       <button type="submit" disabled={saving} className="btn btn-primary">

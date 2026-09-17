@@ -201,7 +201,6 @@ export type ContactContent = {
   socialBlurb: string
   instagramHref: string
   facebookHref: string
-  twitterHref: string
 }
 
 /** What the contact page shipped with — also the fallback for blank input. */
@@ -224,7 +223,6 @@ export const DEFAULT_CONTACT: ContactContent = {
   socialBlurb: 'Stay connected for styling tips, new arrivals, and exclusive offers!',
   instagramHref: 'https://www.instagram.com/glammhair_extenions',
   facebookHref: 'https://facebook.com',
-  twitterHref: 'https://twitter.com',
 }
 
 function joinAddress(addressLine1: string, addressLine2: string): string {
